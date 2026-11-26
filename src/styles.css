@@ -718,3 +718,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
   .hero .pic{animation:none!important}
   .showcase .sc-item>.bcard{opacity:1;transform:none}
 }
+
+/* courses page: same premium carousel */
+.crs-show{margin-top:26px}.crs-show .head-row{align-items:center}
+.crs-show .sc-track{padding-top:6px}
