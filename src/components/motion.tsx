@@ -326,7 +326,9 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     const sync = () => { const i = front(); if (i === shownI) return; shownI = i
       g.querySelectorAll<HTMLElement>('.orbit-item').forEach((el, j) => { el.classList.toggle('on', j === i); el.setAttribute('aria-hidden', String(j !== i)) })
       setIdx(i) }
+    // a soft, unhurried glide (gentle start and landing)
     const inOut = (k: number) => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2
+    const glide = (k: number) => -(Math.cos(Math.PI * k) - 1) / 2
     const out = (k: number) => 1 - Math.pow(1 - k, 3)
     const loop = (t: number) => { raf = 0
       if (anim) { const k = Math.min(1, (t - anim.t0) / anim.dur); ang = anim.from + (anim.to - anim.from) * anim.ease(k); if (k >= 1) anim = null }
@@ -339,7 +341,7 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     // gentle autoplay: glide to the next card every few seconds while visible and untouched
     const auto = () => { autoT = window.setTimeout(auto, 3400)
       if (!vis || dragging || anim || document.hidden || performance.now() - lastUser < 4500) return
-      tween(snapStop(ang) - th, 1250) }
+      tween(snapStop(ang) - th, 1500, glide) }
     autoT = window.setTimeout(auto, 2600)
     const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting }, { threshold: .4 }); io.observe(st)
     // swipe/drag: the ring follows the finger 1:1, then glides on with the flick and settles on a card
@@ -361,6 +363,10 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     const he = (e: PointerEvent) => { if (e.pointerType === 'mouse') lastUser = performance.now() + 1e6 }, hl = (e: PointerEvent) => { if (e.pointerType === 'mouse') lastUser = performance.now() - 2500 }
     st.addEventListener('pointerdown', pd); addEventListener('pointermove', pm, { passive: true }); addEventListener('pointerup', pu); addEventListener('pointercancel', pu)
     st.addEventListener('click', click, true); st.addEventListener('pointerenter', he); st.addEventListener('pointerleave', hl)
+    // decode every card image ahead of time (off the main thread), so nothing stalls when the ring arrives
+    const warm = () => st.querySelectorAll('img').forEach((im) => { (im as HTMLImageElement).decode?.().catch(() => {}) })
+    const ric = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
+    if (ric) ric(warm); else setTimeout(warm, 800)
     apply(); sync()
     return () => { cancelAnimationFrame(raf); clearTimeout(autoT); io.disconnect(); st.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); removeEventListener('pointercancel', pu); st.removeEventListener('click', click, true); st.removeEventListener('pointerenter', he); st.removeEventListener('pointerleave', hl) }
   }, [n, r, th])

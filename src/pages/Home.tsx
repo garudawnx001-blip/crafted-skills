@@ -119,7 +119,7 @@ export default function Home() {
     <section className="sec tint orbit-sec">
       <div className="wrap">
         <Orbit head={<><span className="eyebrow">Course bundles</span><SplitH text="Explore Our Course Bundles" style={{ marginTop: 10 }} /><p className="lead">Learn practical digital skills in Kannada and take the next step toward your goals.</p></>}>
-          {BUNDLES.map((b, i) => <BundleCard key={b.slug} b={b} eager={i < 4} />)}
+          {BUNDLES.map((b) => <BundleCard key={b.slug} b={b} eager />)}
         </Orbit>
         <p className="center" style={{ marginTop: 6 }}><Link to="/courses" className="btn btn-g">Compare all {BUNDLES.length} bundles</Link></p>
       </div>

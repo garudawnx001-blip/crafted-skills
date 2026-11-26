@@ -155,7 +155,7 @@ export function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
 export function BundleCard({ b, eager }: { b: Bundle; eager?: boolean }) {
   const live = b.courses.filter((c) => c.status === 'Available now').length
   return <article className="bcard" data-slug={b.slug}>
-    <Link to={`/courses/${b.slug}`} className="im" tabIndex={-1} aria-hidden="true"><img src={b.image} alt="" loading={eager ? 'eager' : 'lazy'} width="1200" height="391" draggable={false} /></Link>
+    <Link to={`/courses/${b.slug}`} className="im" tabIndex={-1} aria-hidden="true"><img src={b.image} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" width="1200" height="391" draggable={false} /></Link>
     <div className="bd">
       <h3><Link to={`/courses/${b.slug}`}>{b.name}</Link></h3>
       <ul>{b.courses.map((c) => <li key={c.name}><span>{c.name}</span><span className={`st ${c.status === 'Available now' ? 'live' : 'soon'}`}>{c.status}</span></li>)}</ul>
