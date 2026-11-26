@@ -954,7 +954,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
   .orbit-dots,.orbit .sc-ui{animation:obGlow linear both;animation-timeline:--orb;animation-range:entry 40% cover 46%}
   .orbit-floor,.orbit-spot{animation:obGlow linear both;animation-timeline:--orb;animation-range:entry 30% cover 45%}
 }
-@keyframes obRise{from{transform:translate3d(0,150px,0) scale(.84)}60%{transform:translate3d(0,28px,0) scale(.97)}to{transform:translate3d(0,0,0) scale(1)}}
+@keyframes obRise{0%{transform:translate3d(0,170px,0) scale(.78) rotateY(72deg)}55%{transform:translate3d(0,26px,0) scale(.96) rotateY(14deg)}100%{transform:translate3d(0,0,0) scale(1) rotateY(0deg)}}
 @keyframes obGlow{from{opacity:0}to{opacity:1}}
 .orbit-floor{opacity:1;transform:none}.orbit-spot{opacity:1}
 .orbit-item.on .orbit-face:after{animation:obSheen 1.3s cubic-bezier(.4,0,.2,1) .25s both}
@@ -984,3 +984,17 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 /* light sweep stays inside the card */
 .orbit-face:after{transform:none;background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.6) 50%,transparent 60%) no-repeat;background-size:300% 100%;background-position:120% 0}
 @keyframes obSheen{0%{opacity:1;background-position:120% 0}100%{opacity:1;background-position:-20% 0}}
+
+/* cinematic reveal: spotlight opens, an aura blooms, the floor glow spreads (all transform/opacity) */
+.orbit-aura{position:absolute;left:50%;top:44%;width:min(1100px,150vw);aspect-ratio:1.6;translate:-50% -50%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(196,160,255,.32),rgba(214,190,255,.12) 50%,rgba(255,255,255,0) 72%);will-change:transform,opacity}
+@supports (animation-timeline:view()){
+  .orbit-spot{animation:obSpot linear both;animation-timeline:--orb;animation-range:entry 10% cover 46%;transform-origin:50% 0}
+  .orbit-aura{animation:obAura linear both;animation-timeline:--orb;animation-range:entry 0% cover 50%}
+  .orbit-floor{animation:obFloorG linear both;animation-timeline:--orb;animation-range:entry 25% cover 48%}
+}
+@keyframes obSpot{from{transform:scaleX(.3);opacity:0}to{transform:none;opacity:1}}
+@keyframes obAura{from{transform:scale(.45);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes obFloorG{from{transform:scaleX(.2);opacity:0}to{transform:none;opacity:1}}
+@media (max-width:640px){.orbit-aura{width:115vw;aspect-ratio:1.2}}
+.lite .orbit-aura{display:none}

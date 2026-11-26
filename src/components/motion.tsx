@@ -388,6 +388,7 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
       <div className="sc-ui"><span className="sc-count" aria-live="polite"><b key={idx}>{String(idx + 1).padStart(2, '0')}</b> / {String(n).padStart(2, '0')}</span>
         <div className="rail-ui"><button onClick={() => ctl.current?.go(-1)} aria-label="Previous bundle">{arrow('M15 5l-7 7 7 7')}</button><button onClick={() => ctl.current?.go(1)} aria-label="Next bundle">{arrow('M9 5l7 7-7 7')}</button></div></div></div>
     <div className="orbit-stage" ref={stage}>
+      <div className="orbit-aura" aria-hidden="true" />
       <div className="orbit-spot" aria-hidden="true" />
       <div className="orbit-floor" aria-hidden="true" />
       <div className="orbit-rise">
