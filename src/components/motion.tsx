@@ -395,6 +395,7 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
       <div className="orbit-aura" aria-hidden="true" />
       <div className="orbit-spot" aria-hidden="true" />
       <div className="orbit-floor" aria-hidden="true" />
+      <div className="orbit-topfade" aria-hidden="true" />
       <div className="orbit-rise">
         <div className="orbit-ring" ref={ring} style={{ transform: `translate3d(0,0,${-r}px) rotateX(${TILT}deg)` }}>
           {items}

@@ -1006,3 +1006,28 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 }
 @keyframes obHead{from{opacity:0;transform:translate3d(0,46px,0) scale(.96)}to{opacity:1;transform:none}}
 .orbit .head-row>div:first-child{transform-origin:0 100%;will-change:transform,opacity}
+
+/* ===== pages and sections appear with a pure fade: nothing slides up ===== */
+.rv{transform:none!important}
+.stg>*,.rail.stg>*{transform:none!important}
+@keyframes rvIn{from{opacity:0}}
+@keyframes rvInX{from{opacity:0}}
+.he{transform:none!important}
+@keyframes heIn{to{opacity:1}}
+.sh .w>span{transform:none!important;opacity:0;transition:opacity .9s ease calc(var(--i)*45ms)!important}
+.sh.in .w>span{opacity:1}
+@keyframes fIn{to{clip-path:inset(0 0 0 0 round 28px)}}
+
+/* ===== orbit reveal, take 2: camera pull-back. Starts close up filling the frame,
+   then pulls back and swings round until the whole orbit sits in place ===== */
+.orbit-stage{overflow:clip}
+@keyframes obRise{
+  0%{transform:translate3d(0,40px,0) scale(1.75) rotateY(-38deg)}
+  50%{transform:translate3d(0,10px,0) scale(1.18) rotateY(-10deg)}
+  100%{transform:translate3d(0,0,0) scale(1) rotateY(0deg)}}
+@supports (animation-timeline:view()){
+  .orbit-rise{animation-range:entry 10% cover 50%!important}
+}
+@keyframes scNum{from{opacity:0}}
+.fbadge{transform:none!important}
+.orbit-topfade{position:absolute;left:0;right:0;top:0;height:90px;z-index:8;pointer-events:none;background:linear-gradient(180deg,#fbf8ff 10%,rgba(251,248,255,0));transform:translateZ(0)}
