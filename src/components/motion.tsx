@@ -338,6 +338,14 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     const goTime = (target: number, ms = 900) => { cancelAnimationFrame(tw); const from = now(), t1 = performance.now()
       const step = (x: number) => { const k = Math.min(1, (x - t1) / ms); a.currentTime = from + (target - from) * ease(k); if (k < 1) tw = requestAnimationFrame(step) }
       tw = requestAnimationFrame(step) }
+    // where the deck starts: exactly on the hero's "My learning" card, so the cards fly out of it
+    const place = () => { const m = document.querySelector('.hero .m1') as HTMLElement | null, it = st.querySelector('.orbit-item') as HTMLElement | null; if (!m || !it) return
+      const mb = m.getBoundingClientRect(), sb = st.getBoundingClientRect(), cw = it.offsetWidth, ch = it.offsetHeight || 460
+      const fx = mb.left + mb.width / 2 - (sb.left + sb.width / 2), fy = (mb.top + mb.height / 2) - (sb.top + 40 + ch / 2)
+      st.style.setProperty('--fx', `${Math.round(fx)}px`); st.style.setProperty('--fy', `${Math.round(fy)}px`); st.style.setProperty('--fs', String(Math.max(.4, Math.min(.8, mb.width / cw)))) }
+    const onSkill = (e: Event) => { const b = st.getBoundingClientRect(); if (landed || b.top < innerHeight) return
+      const j = (e as CustomEvent<number>).detail; a.currentTime = j * STEP; sync() }
+    window.addEventListener('cs-skill', onSkill)
     // assembly is scroll-driven in CSS; the ring starts turning once the cards have assembled
     const check = () => { const b = st.getBoundingClientRect(); vis = b.bottom > 0 && b.top < innerHeight
       const done = b.top + b.height * .5 <= innerHeight * .56
@@ -345,8 +353,9 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
       else if (!done && landed) { landed = false; st.classList.remove('landed'); a.pause() }
       else if (landed) { if (!vis) a.pause(); else if (!paused && a.playState !== 'running') a.play() } }
     let cq = 0; const onS = () => { if (!cq) cq = requestAnimationFrame(() => { cq = 0; check() }) }
-    addEventListener('scroll', onS, { passive: true }); addEventListener('resize', onS); check()
-    const io = { disconnect: () => { removeEventListener('scroll', onS); removeEventListener('resize', onS); cancelAnimationFrame(cq) } }
+    const onR = () => { place(); onS() }
+    addEventListener('scroll', onS, { passive: true }); addEventListener('resize', onR); place(); check(); const pl = window.setTimeout(place, 1200)
+    const io = { disconnect: () => { removeEventListener('scroll', onS); removeEventListener('resize', onR); window.removeEventListener('cs-skill', onSkill); cancelAnimationFrame(cq); clearTimeout(pl) } }
     // swipe / drag to spin (touch and mouse); a tap stays a tap
     let down = false, sx = 0, sy = 0, st0 = 0, moved = 0, horiz = false
     const pd = (e: PointerEvent) => { if (!landed) return; down = true; moved = 0; horiz = false; sx = e.clientX; sy = e.clientY; st0 = now(); cancelAnimationFrame(tw); pause() }

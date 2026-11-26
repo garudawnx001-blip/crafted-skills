@@ -930,7 +930,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .orbit-sec.sec.tint{background:radial-gradient(120% 70% at 50% 62%,#f1e7ff 0,var(--soft) 55%,#fff 100%);overflow-x:clip}
 .orbit-stage{overflow-x:clip;overflow-y:visible;view-timeline:--orb block}
 .orbit-ring{top:40px}
-.orbit-fall{position:relative;transform-style:preserve-3d;will-change:transform,opacity;transform-origin:50% 50%}
+.orbit-fall{position:relative;transform-style:preserve-3d;will-change:transform;transform-origin:50% 50%}
 .orbit-face,.orbit-back{backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .orbit-face{position:relative;border-radius:22px;transform:translateZ(1px)}
 .orbit-face>.bcard{box-shadow:0 2px 6px rgba(40,10,90,.06),0 30px 60px -36px rgba(50,1,130,.45)}
@@ -944,21 +944,26 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 @keyframes obSheen{0%{opacity:1;transform:translate3d(-120%,0,0)}100%{opacity:1;transform:translate3d(120%,0,0)}}
 .orbit-face{overflow:hidden}
 /* spotlight from above + glowing floor */
-.orbit-spot{position:absolute;left:0;right:0;top:-60px;height:115%;pointer-events:none;background:radial-gradient(38% 70% at 50% 0,rgba(179,99,243,.20),rgba(179,99,243,.06) 45%,rgba(255,255,255,0) 70%);opacity:.25;transition:opacity 1.2s ease}
+.orbit-spot{position:absolute;left:0;right:0;top:-40px;height:110%;pointer-events:none;background:radial-gradient(34% 55% at 50% 42%,rgba(179,99,243,.18),rgba(179,99,243,.05) 50%,rgba(255,255,255,0) 72%);opacity:.25;transition:opacity 1.2s ease}
 .landed .orbit-spot{opacity:1}
 .orbit-floor{transition:transform 1.4s cubic-bezier(.16,1,.3,1),opacity 1.2s ease}
 .landed .orbit-floor{transform:none;opacity:1}
-/* scroll-driven: a neat deck in the centre fans out into an arc, then wraps into the ring */
+/* scroll-driven flight: the deck leaves the hero's "My learning" card, flies down with the scroll,
+   lands as a neat stack, fans into an arc, then wraps into the 3D ring */
+.orbit-stage{--fx:0px;--fy:-600px;--fs:.55}
 @supports (animation-timeline:view()){
-  .orbit-fall{animation:obDeck linear both;animation-timeline:--orb;animation-range:entry 45% cover 46%}
+  .orbit-fall{animation:obFly linear both;animation-timeline:--orb;animation-range:entry 0% cover 48%}
+  .orbit-face,.orbit-back{animation:obAppear linear both;animation-timeline:--orb;animation-range:entry 0% entry 22%}
 }
-@keyframes obDeck{
-  0%{transform:translateZ(calc(-1 * var(--r))) rotateY(calc(-1 * var(--a))) translateZ(var(--r)) translate3d(0,var(--oy),var(--oz)) rotateZ(var(--rz))}
-  45%{transform:translateZ(calc(-1 * var(--r))) rotateY(calc(-.42 * var(--a))) translateZ(calc(var(--r) * 1.05)) translate3d(0,-26px,0) rotateZ(calc(var(--rz) * -.4))}
-  100%{transform:translateZ(0) rotateY(0deg) translateZ(0) translate3d(0,0,0) rotateZ(0deg)}}
+@keyframes obAppear{from{opacity:0}to{opacity:1}}
+@keyframes obFly{
+  0%{transform:translateZ(calc(-1 * var(--r))) rotateY(calc(-1 * var(--a))) translateZ(var(--r)) translate3d(var(--fx),var(--fy),0) translate3d(0,calc(var(--oy) * .4),var(--oz)) rotateZ(calc(var(--rz) * .5)) scale(var(--fs))}
+  42%{transform:translateZ(calc(-1 * var(--r))) rotateY(calc(-1 * var(--a))) translateZ(var(--r)) translate3d(0,0,0) translate3d(0,var(--oy),var(--oz)) rotateZ(var(--rz)) scale(1)}
+  70%{transform:translateZ(calc(-1 * var(--r))) rotateY(calc(-.42 * var(--a))) translateZ(calc(var(--r) * 1.05)) translate3d(0,-22px,0) translate3d(0,0,0) rotateZ(calc(var(--rz) * -.4)) scale(1)}
+  100%{transform:translateZ(0) rotateY(0deg) translateZ(0) translate3d(0,0,0) translate3d(0,0,0) rotateZ(0deg) scale(1)}}
 @supports not (animation-timeline:view()){
   .orbit-fall{transform:translateZ(calc(-1 * var(--r))) rotateY(calc(-1 * var(--a))) translateZ(var(--r)) translate3d(0,var(--oy),var(--oz)) rotateZ(var(--rz));transition:transform 1.5s cubic-bezier(.2,.85,.25,1)}
-  .landed .orbit-fall{transform:translateZ(0) rotateY(0deg) translateZ(0) translate3d(0,0,0) rotateZ(0deg)}
+  .landed .orbit-fall{transform:translateZ(0) rotateY(0deg) translateZ(0) translate3d(0,var(--oy),0) rotateZ(0deg);transform:none}
 }
 .orbit-item .bcard:hover{transform:none}
 

@@ -42,6 +42,8 @@ function SkillTicker() {
   const list = [...new Set(ALL_SKILLS)]
   const [i, setI] = useState(0)
   useEffect(() => { const t = setInterval(() => setI((x) => (x + 1) % list.length), 2200); return () => clearInterval(t) }, [list.length])
+  // tell the course orbit which bundle this skill belongs to: that bundle tops the deck that flies down
+  useEffect(() => { const b = BUNDLES.findIndex((x) => x.courses.some((c) => c.name === list[i])); window.dispatchEvent(new CustomEvent('cs-skill', { detail: Math.max(0, b) })) }, [i, list])
   return <b className="tick-w"><span key={i}>{list[i]}</span></b>
 }
 
