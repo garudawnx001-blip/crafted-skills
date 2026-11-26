@@ -341,11 +341,11 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     // autoplay: starts the moment the reveal completes and keeps turning; only an active drag
     // (or the tab being hidden) holds it, and it resumes 1.6s after the finger lifts
     let started = false
-    const autoStep = () => { if (!vis || dragging || anim || document.hidden || performance.now() - lastUser < 1600) return; tween(snapStop(ang) - th, 1100, glide) }
-    const auto = () => { autoT = window.setTimeout(auto, 2200); if (started) autoStep() }
-    autoT = window.setTimeout(auto, 2200)
-    const revealed = () => { const b = st.getBoundingClientRect(); return b.top + b.height * .5 <= innerHeight * .62 }
-    const onScr = () => { if (!started && revealed()) { started = true; autoStep() } }
+    const autoStep = () => { if (!vis || dragging || anim || document.hidden || performance.now() - lastUser < 1600) return; tween(snapStop(ang) - th, 1000, glide) }
+    const auto = () => { autoT = window.setTimeout(auto, 1900); if (started) autoStep() }
+    autoT = window.setTimeout(auto, 1900)
+    const revealed = () => { const b = st.getBoundingClientRect(); return b.top <= innerHeight * .8 && b.bottom > 0 }
+    const onScr = () => { if (!started && revealed()) { started = true; vis = true; clearTimeout(autoT); autoStep(); autoT = window.setTimeout(auto, 1900) } }
     addEventListener('scroll', onScr, { passive: true }); onScr()
     const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting }, { threshold: .15 }); io.observe(st)
     // swipe/drag: the ring follows the finger 1:1, then glides on with the flick and settles on a card

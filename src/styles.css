@@ -1031,3 +1031,34 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 @keyframes scNum{from{opacity:0}}
 .fbadge{transform:none!important}
 .orbit-topfade{position:absolute;left:0;right:0;top:0;height:90px;z-index:8;pointer-events:none;background:linear-gradient(180deg,#fbf8ff 10%,rgba(251,248,255,0));transform:translateZ(0)}
+/* tight stage: no empty band above/below the cards */
+.orbit-ring{top:-34px!important}
+.orbit-stage{--oh:520px}
+@media (min-width:1000px){.orbit-stage{--oh:500px}}
+@media (max-width:640px){.orbit-ring{top:-26px!important}.orbit-stage{--oh:530px}}
+.orbit-topfade{height:22px}
+.orbit-dots{margin-top:10px}
+/* no slide on the courses heading: fade only */
+@keyframes obHead{from{opacity:0}to{opacity:1}}
+.orbit .head-row>div{transform:none!important}
+/* affiliate chart bars: grow as the dashboard comes into view (never left empty) */
+.grow .gbar,.grow.in .gbar{transition:none;transform:none}
+@supports (animation-timeline:view()){
+  @keyframes gGrow{from{transform:scaleY(.04)}to{transform:none}}
+  .grow .gbar{animation:gGrow linear both;animation-timeline:view();animation-range:entry 30% cover 50%}
+}
+.chart svg{height:120px}
+@media (max-width:640px){.chart svg{height:96px}}
+/* tighter, even section rhythm on every page */
+:root{--sec:clamp(26px,2.6vw,38px)}
+@media (max-width:640px){:root{--sec:22px}}
+.statement{padding:calc(var(--sec) * 1.25) 0}
+.cta{padding-top:clamp(40px,4.4vw,60px)!important;padding-bottom:clamp(40px,4.4vw,60px)!important}
+.ftr{padding-top:44px}
+.phero{padding-bottom:calc(var(--sec) + 8px)}
+.orbit-stage{--oh:440px}
+@media (min-width:1000px){.orbit-stage{--oh:420px}}
+@media (max-width:640px){.orbit-stage{--oh:512px}}
+.orbit-stage{--oh:458px}
+@media (min-width:1000px){.orbit-stage{--oh:462px}}
+@media (max-width:640px){.orbit-stage{--oh:512px}}

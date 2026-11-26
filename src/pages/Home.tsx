@@ -153,7 +153,7 @@ export default function Home() {
       <div className="wrap">
         <div className="head center rv"><span className="eyebrow">For everyone</span><SplitH text="Who Can Join Our Courses" /></div>
         <div className="g4 stg">{WHO.map((w) => <div key={w.t} className="card who-card"><div className="ic"><Icon n={whoIcon[w.icon]} /></div><h3>{w.t}</h3><p>{w.d}</p></div>)}</div>
-        <div className="head center rv" style={{ marginTop: 'clamp(48px,6vw,80px)' }}><span className="eyebrow">Why Crafted Skills?</span></div>
+        <div className="head center rv" style={{ marginTop: 'clamp(30px,3.4vw,44px)' }}><span className="eyebrow">Why Crafted Skills?</span></div>
         <div className="g4 stg">{WHY.map((w) => <div key={w.t} className="why-item"><b><Icon n="check" s={18} />{w.t}</b><p>{w.d}</p></div>)}</div>
       </div>
     </section>
