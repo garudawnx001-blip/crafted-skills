@@ -320,27 +320,29 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     let ang = 0, raf = 0, anim: { from: number; to: number; t0: number; dur: number; ease: (k: number) => number } | null = null
     let dragging = false, sx = 0, sy = 0, sa = 0, horiz = false, moved = 0, lastX = 0, lastT = 0, vel = 0
     let vis = false, lastUser = -1e9, autoT = 0
-    const apply = () => { g.style.transform = `translate3d(0,0,${-r}px) rotateX(${(TILT + ty).toFixed(2)}deg) rotateY(${(ang + lean + tx).toFixed(3)}deg)` }
+    const apply = () => { g.style.transform = `translate3d(0,0,${-r}px) rotateX(${(TILT + ty).toFixed(2)}deg) rotateY(${(ang + tx).toFixed(3)}deg)` }
     const front = () => ((Math.round(-ang / th) % n) + n) % n
     // Deck fan-out reveal: the bundles start as one neat stack at the front and fan out round the ring
     // as the section scrolls in. Only the 7 card transforms change (compositor work), and only while scrolling.
     const cards = [...g.querySelectorAll<HTMLElement>('.orbit-item')]
     let fan = -1
-    const fanP = () => { const b = st.getBoundingClientRect(), s0 = innerHeight * (innerWidth < 641 ? .8 : .7), s1 = innerHeight * (innerWidth < 641 ? .4 : .3)
+    const fanP = () => { const b = st.getBoundingClientRect(), s0 = Math.min(innerHeight * .8, innerHeight - b.height * .92), s1 = Math.max(s0 - innerHeight * .6, innerHeight * .03)
       return Math.max(0, Math.min(1, (s0 - b.top) / (s0 - s1))) }
     const ease = (k: number) => k * k * k * (k * (k * 6 - 15) + 10)
     const spring = (k: number) => { const t = ease(k); return t + Math.sin(Math.PI * t) * .06 * t }
     let forced = false
-    // the ring answers your scroll: it leans with the speed you scroll at and springs back (transform only)
-    let lean = 0, leanV = 0, lastSY = scrollY, lastST = performance.now()
     // and on PC it tilts gently toward the pointer
-    let tx = 0, ty = 0, ptx = 0, pty = 0
+    let tx = 0, ty = 0, ptx = 0, pty = 0, lastFrame = 0
+    const glinted: boolean[] = [], flip: boolean[] = []
     const layFan = () => { const P = forced ? 1 : fan, last = (n - 1) / 2
       cards.forEach((el, j) => { const d = ((j * th + ang) % 360 + 540) % 360 - 180, k = Math.abs(d) / th, sg = Math.sign(d)
-        // cards nearest the front leave the deck first; each lands with a gentle spring
-        const pk = Math.max(0, Math.min(1, (P - k / last * .32) / .68)), e = spring(pk), q = 1 - Math.min(1, e)
+        // like opening a deck in your hand: the cards nearest the top leave first, fanning out in an arc
+        // (pivoting near their bottom edge), lifting toward you, then settling into the ring with a soft spring
+        const pk = Math.max(0, Math.min(1, (P - k / last * .34) / .66)), e = spring(pk), q = 1 - Math.min(1, e), arc = Math.sin(Math.PI * Math.min(1, pk))
+        if (pk > .42 && !glinted[j]) { glinted[j] = true; flip[j] = !flip[j]; el.classList.remove('gl', 'gl2'); el.classList.add(flip[j] ? 'gl' : 'gl2') }
+        if (pk < .12 && glinted[j]) glinted[j] = false
         if (P >= 1) { el.style.transform = `rotateY(${j * th}deg) translate3d(0,0,${r}px)`; return }
-        el.style.transform = `rotateY(${(-ang + d * e).toFixed(2)}deg) translate3d(${(q * sg * k * 16).toFixed(1)}px,${(-q * k * 11 - Math.sin(Math.PI * Math.min(1, pk)) * 22).toFixed(1)}px,${(r - q * k * 30 + Math.sin(Math.PI * Math.min(1, pk)) * 40).toFixed(1)}px) rotateZ(${(q * sg * k * 2.4).toFixed(2)}deg)` }) }
+        el.style.transform = `rotateY(${(-ang + d * e).toFixed(2)}deg) translate3d(${(q * sg * k * 16).toFixed(1)}px,${(-q * k * 11 - arc * 20).toFixed(1)}px,${(r - q * k * 30 + arc * 42).toFixed(1)}px) rotateZ(${(q * sg * k * 2.4 + sg * Math.min(k, 3) * 5 * arc).toFixed(2)}deg)` }) }
     let shownI = -1
     const sync = () => { const i = front(); if (i === shownI) return; shownI = i
       g.querySelectorAll<HTMLElement>('.orbit-item').forEach((el, j) => { el.classList.toggle('on', j === i); el.setAttribute('aria-hidden', String(j !== i)) })
@@ -351,9 +353,9 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     const out = (k: number) => 1 - Math.pow(1 - k, 3)
     const loop = (t: number) => { raf = 0
       if (anim) { const k = Math.min(1, (t - anim.t0) / anim.dur); ang = anim.from + (anim.to - anim.from) * anim.ease(k); if (k >= 1) anim = null }
-      leanV += (-lean) * .12; leanV *= .78; lean += leanV; if (Math.abs(lean) < .01 && Math.abs(leanV) < .01) { lean = 0; leanV = 0 }
-      tx += (ptx - tx) * .1; ty += (pty - ty) * .1
-      const settling = lean !== 0 || Math.abs(ptx - tx) > .02 || Math.abs(pty - ty) > .02
+      const dtm = Math.min(50, t - (lastFrame || t)); lastFrame = t; const kf = 1 - Math.exp(-dtm / 140)
+      tx += (ptx - tx) * kf; ty += (pty - ty) * kf
+      const settling = Math.abs(ptx - tx) > .01 || Math.abs(pty - ty) > .01; if (!settling) lastFrame = 0
       apply(); sync()
       const p = forced ? 1 : fanP(); if (p !== fan || (p < 1 && anim)) { fan = p; layFan() }
       if (fan >= 1 && !started) { started = true; clearTimeout(autoT); autoStep(); autoT = window.setTimeout(auto, 1900) }
@@ -369,9 +371,8 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     const autoStep = () => { if (fan < 1 || !vis || dragging || anim || document.hidden || performance.now() - lastUser < 1600) return; tween(snapStop(ang) - th, 1000, glide) }
     const auto = () => { autoT = window.setTimeout(auto, 1900); if (started) autoStep() }
     autoT = window.setTimeout(auto, 1900)
-    const onScr = () => { const now = performance.now(), dy = scrollY - lastSY, dt = Math.max(8, now - lastST); lastSY = scrollY; lastST = now
-      const b = st.getBoundingClientRect(); if (b.top < innerHeight * 1.05 && b.bottom > -innerHeight * .2) { vis = true
-        if (fan >= 1 && !dragging) leanV += Math.max(-1.6, Math.min(1.6, dy / dt * 1.4)); kick() } }
+    const onScr = () => { const b = st.getBoundingClientRect(); if (b.top < innerHeight * 1.05 && b.bottom > -innerHeight * .2) { vis = true
+        kick() } }
     addEventListener('scroll', onScr, { passive: true }); onScr()
     const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting }, { threshold: .15 }); io.observe(st)
     // swipe/drag: the ring follows the finger 1:1, then glides on with the flick and settles on a card
@@ -393,7 +394,7 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     const fine = matchMedia('(hover:hover) and (pointer:fine)').matches
     const he = () => {}, hl = () => { ptx = 0; pty = 0; kick() }
     const hm = (e: PointerEvent) => { if (!fine || dragging) return; const b = st.getBoundingClientRect()
-      ptx = ((e.clientX - b.left) / b.width - .5) * 7; pty = -((e.clientY - b.top) / b.height - .5) * 4; kick() }
+      ptx = Math.round(((e.clientX - b.left) / b.width - .5) * 5 * 20) / 20; pty = Math.round(-((e.clientY - b.top) / b.height - .5) * 2.4 * 20) / 20; kick() }
     st.addEventListener('pointermove', hm)
     st.addEventListener('pointerdown', pd); addEventListener('pointermove', pm, { passive: true }); addEventListener('pointerup', pu); addEventListener('pointercancel', pu)
     st.addEventListener('click', click, true); st.addEventListener('pointerenter', he); st.addEventListener('pointerleave', hl)

@@ -1074,3 +1074,10 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
   body:has(.mbuy) .wa{bottom:calc(96px + env(safe-area-inset-bottom));transition:bottom .3s ease}
   body:has(.mbuy) .ftr{padding-bottom:110px}
 }
+/* deck opening: cards pivot near their bottom edge like a fan in the hand; each gets one glint as it leaves */
+.orbit-item{transform-origin:50% 88%}
+@keyframes dkGlint{0%{opacity:0;background-position:120% 0}20%{opacity:1}100%{opacity:0;background-position:-20% 0}}
+@keyframes dkGlint2{0%{opacity:0;background-position:120% 0}20%{opacity:1}100%{opacity:0;background-position:-20% 0}}
+.orbit-item.gl .orbit-face:after{animation:dkGlint 1s cubic-bezier(.3,.6,.2,1) both}
+.orbit-item.gl2 .orbit-face:after{animation:dkGlint2 1s cubic-bezier(.3,.6,.2,1) both}
+.orbit-item.on.gl .orbit-face:after,.orbit-item.on.gl2 .orbit-face:after{animation:obSheen 1.3s cubic-bezier(.4,0,.2,1) .25s both}
