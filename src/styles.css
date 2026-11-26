@@ -955,7 +955,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
   .orbit-fall{animation:obFly linear both;animation-timeline:--orb;animation-range:entry 0% cover 48%}
   .orbit-face,.orbit-back{animation:obAppear linear both;animation-timeline:--orb;animation-range:entry 0% entry 22%}
 }
-@keyframes obAppear{from{opacity:0}to{opacity:1}}
+@keyframes obAppear{from{opacity:.002}to{opacity:1}}
 @keyframes obFly{
   0%{transform:translateZ(calc(-1 * var(--r))) rotateY(calc(-1 * var(--a))) translateZ(var(--r)) translate3d(var(--fx),var(--fy),0) translate3d(0,calc(var(--oy) * .4),var(--oz)) rotateZ(calc(var(--rz) * .5)) scale(var(--fs))}
   42%{transform:translateZ(calc(-1 * var(--r))) rotateY(calc(-1 * var(--a))) translateZ(var(--r)) translate3d(0,0,0) translate3d(0,var(--oy),var(--oz)) rotateZ(var(--rz)) scale(1)}
