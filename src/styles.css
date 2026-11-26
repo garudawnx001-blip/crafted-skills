@@ -901,20 +901,19 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 
 /* ===== orbit: 3D ring of course cards ===== */
 .orbit{--ow:min(340px,74vw)}
-.orbit-stage{--ow:inherit;position:relative;height:calc(var(--oh,560px));perspective:1500px;perspective-origin:50% 38%;margin:8px calc(var(--pad) * -1) 0;overflow:hidden;touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none;
-  mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent)}
+.orbit-stage{--ow:inherit;position:relative;height:calc(var(--oh,560px));perspective:1500px;perspective-origin:50% 38%;margin:8px calc(var(--pad) * -1) 0;overflow:clip;touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none;view-timeline:--orb block}
 .orbit-stage:active{cursor:grabbing}
-.orbit-ring{position:absolute;left:50%;top:26px;width:0;height:0;transform-style:preserve-3d;will-change:transform}
+.orbit-ring{position:absolute;left:50%;top:44px;width:0;height:0;transform-style:preserve-3d;will-change:transform}
 .orbit-item{position:absolute;left:calc(var(--ow) / -2);top:0;width:var(--ow);backface-visibility:hidden;-webkit-backface-visibility:hidden;transform-style:preserve-3d}
 .orbit-item img{-webkit-user-drag:none}
-.orbit-item .bcard{transition:box-shadow .6s,filter .6s;filter:saturate(.75) brightness(.97)}
-.orbit-item.on .bcard{filter:none;box-shadow:0 2px 6px rgba(40,10,90,.06),0 60px 90px -46px rgba(50,1,130,.55)}
+.orbit-item .bcard{transition:box-shadow .6s;box-shadow:0 10px 30px -20px rgba(50,1,130,.3)}
+.orbit-item.on .bcard{box-shadow:0 2px 6px rgba(40,10,90,.06),0 60px 90px -46px rgba(50,1,130,.55)}
 .orbit-item .bcard:hover{transform:none}
 .orbit-dots{display:flex;gap:8px;justify-content:center;margin-top:4px}
 .orbit-dots i{width:7px;height:7px;border-radius:9px;background:var(--lav3);transition:width .4s cubic-bezier(.2,.8,.2,1),background .4s}
 .orbit-dots i.on{width:26px;background:linear-gradient(90deg,var(--indigo),var(--vio2))}
-@media (min-width:1000px){.orbit{--ow:360px}.orbit-stage{--oh:600px}}
-@media (max-width:640px){.orbit{--ow:min(300px,78vw)}.orbit-stage{--oh:540px;perspective:1100px}.orbit .sc-ui .rail-ui{display:none}}
+@media (min-width:1000px){.orbit{--ow:360px}.orbit-stage{--oh:620px}}
+@media (max-width:640px){.orbit{--ow:min(300px,78vw)}.orbit-stage{--oh:560px;perspective:1100px}.orbit .sc-ui .rail-ui{display:none}}
 .lite .orbit-item .bcard{filter:none}
 
 /* admin login: its own look */
@@ -926,3 +925,33 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .auth-admin .auth-card{background:#fff;border:1px solid var(--line2);border-radius:28px;padding:clamp(24px,4vw,40px);box-shadow:0 40px 90px -50px rgba(50,1,130,.45)}
 
 .statement{padding:calc(var(--sec) * 1.5) 0}
+
+/* ===== cards fall from above and land on the orbit, driven by scroll ===== */
+.orbit-sec{overflow-x:clip}
+.orbit-fall,.orbit-fall>*{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.orbit-fall{transform-origin:50% 0;will-change:transform,opacity}
+.orbit-floor{position:absolute;left:0;right:0;margin:0 auto;bottom:10px;width:min(820px,100%);height:110px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(124,58,237,.22),rgba(179,99,243,.08) 55%,rgba(250,247,255,0));transform:scaleX(.2);opacity:0;will-change:transform,opacity;pointer-events:none}
+@supports (animation-timeline:view()){
+  .orbit-fall{animation:orbFall linear both;animation-timeline:--orb;animation-range:entry calc(10% + var(--j) * 6%) cover calc(36% + var(--j) * 3.2%)}
+  .orbit-floor{animation:orbFloor linear both;animation-timeline:--orb;animation-range:entry 30% cover 55%}
+}
+@supports not (animation-timeline:view()){
+  .orbit-fall{opacity:0;transform:translate3d(0,-115%,0) rotateX(26deg) rotateZ(-5deg) scale(.9)}
+  .landed .orbit-fall{opacity:1;transform:none;transition:opacity .6s ease calc(var(--j) * 90ms),transform 1.1s cubic-bezier(.2,.9,.25,1.12) calc(var(--j) * 90ms)}
+  .orbit-floor{transition:transform 1.2s cubic-bezier(.16,1,.3,1) .5s,opacity 1s .5s}.landed .orbit-floor{opacity:1;transform:none}
+}
+@keyframes orbFall{
+  0%{opacity:0;transform:translate3d(0,-115%,0) rotateX(26deg) rotateZ(-5deg) scale(.9)}
+  30%{opacity:.15}
+  70%{opacity:1}
+  84%{transform:translate3d(0,10px,0) rotateX(-3deg) rotateZ(.4deg) scale(1)}
+  100%{opacity:1;transform:none}}
+@keyframes orbFloor{to{transform:none;opacity:1}}
+
+/* edge fades as cheap static overlays (a mask over 3D content would force full repaints) */
+.orbit-sec.sec.tint{background:var(--soft)}
+.orbit-stage:before,.orbit-stage:after{content:"";position:absolute;top:0;bottom:0;width:8%;z-index:6;pointer-events:none;transform:translateZ(0)}
+.orbit-stage:before{left:0;background:linear-gradient(90deg,var(--soft) 10%,rgba(250,247,255,0))}
+.orbit-stage:after{right:0;background:linear-gradient(270deg,var(--soft) 10%,rgba(250,247,255,0))}
+.orbit-top{position:absolute;left:0;right:0;top:0;height:90px;z-index:6;pointer-events:none;background:linear-gradient(180deg,var(--soft),rgba(250,247,255,0));transform:translateZ(0)}

@@ -108,16 +108,7 @@ export default function Home() {
     <Hero />
     <Marquee />
 
-    <section className="zoom" aria-label="Learn in Kannada. Grow with Skills.">
-      <div className="zoom-pin">
-        <div className="zoom-intro"><span className="eyebrow">Crafted Skills</span><h2>Your journey starts here.</h2></div>
-        <div className="zoom-media"><img src="img/hero-collage.webp" alt="Women learning digital skills at home with Crafted Skills" loading="lazy" width="1200" height="800" /><div className="zoom-shade" /></div>
-        <div className="zoom-copy wrap"><span className="kn" lang="kn">{SITE.kannadaLine}</span><h2>Learn in Kannada.<br />Grow with Skills.</h2><p>Build Your Dreams from Home.</p>
-          <Link to="/courses" className="btn btn-w">Explore Our Courses</Link></div>
-      </div>
-    </section>
-
-    <section className="sec tint">
+    <section className="sec tint orbit-sec">
       <div className="wrap">
         <Orbit head={<><span className="eyebrow">Course bundles</span><SplitH text="Explore Our Course Bundles" style={{ marginTop: 10 }} /><p className="lead">Learn practical digital skills in Kannada and take the next step toward your goals.</p></>}>
           {BUNDLES.map((b, i) => <BundleCard key={b.slug} b={b} eager={i < 4} />)}

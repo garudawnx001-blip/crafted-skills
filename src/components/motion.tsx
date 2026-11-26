@@ -334,7 +334,11 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     const tick = window.setInterval(sync, 200)
     const pause = () => { paused = true; clearTimeout(resumeT); a.pause() }
     const resume = (ms = 2500) => { clearTimeout(resumeT); resumeT = window.setTimeout(() => { paused = false; if (vis) a.play() }, ms) }
-    const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting; if (!vis) a.pause(); else if (!paused) a.play() }, { threshold: .15 }); io.observe(st)
+    let landed = false; a.pause()
+    const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting && e.intersectionRatio > .5
+      if (vis && !landed) { landed = true; st.classList.add('landed'); resumeT = window.setTimeout(() => { if (!paused && vis) a.play() }, 900); return }
+      if (!landed) return
+      if (!vis) a.pause(); else if (!paused) a.play() }, { threshold: [0, .5, .8] }); io.observe(st)
     // drag to spin (mouse and touch); a tiny move is still a tap
     let down = false, sx = 0, st0 = 0, moved = 0
     const pd = (e: PointerEvent) => { down = true; moved = 0; sx = e.clientX; st0 = Number(a.currentTime) || 0; pause() }
@@ -367,8 +371,9 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
       <div className="sc-ui"><span className="sc-count" aria-live="polite"><b key={idx}>{String(idx + 1).padStart(2, '0')}</b> / {String(n).padStart(2, '0')}</span>
         <div className="rail-ui"><button onClick={() => go(-1)} aria-label="Previous bundle">{arrow('M15 5l-7 7 7 7')}</button><button onClick={() => go(1)} aria-label="Next bundle">{arrow('M9 5l7 7-7 7')}</button></div></div></div>
     <div className="orbit-stage" ref={stage}>
+      <div className="orbit-floor" aria-hidden="true" /><div className="orbit-top" aria-hidden="true" />
       <div className="orbit-ring" ref={ring} style={{ transform: `translate3d(0,0,${-r}px)` }}>
-        {children.map((c, j) => <div className={`orbit-item ${j === idx ? 'on' : ''}`} key={j} data-j={j} style={{ transform: `rotateY(${j * th}deg) translate3d(0,0,${r}px)` }} aria-hidden={j !== idx}>{c}</div>)}
+        {children.map((c, j) => <div className={`orbit-item ${j === idx ? 'on' : ''}`} key={j} data-j={j} style={{ transform: `rotateY(${j * th}deg) translate3d(0,0,${r}px)` }} aria-hidden={j !== idx}><div className="orbit-fall" style={{ ['--j' as string]: j }}>{c}</div></div>)}
       </div>
     </div>
     <div className="orbit-dots" aria-hidden="true">{children.map((_, j) => <i key={j} className={j === idx ? 'on' : ''} />)}</div>

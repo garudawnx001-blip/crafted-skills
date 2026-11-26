@@ -83,9 +83,15 @@ export function Header() {
   const loc = useLocation(); const nav = useNavigate()
   useEffect(() => { setOpen(false); setMenu(false) }, [loc.pathname])
   useEffect(() => {
-    let last = window.scrollY, tick = false
+    // Hidden while scrolling down; it returns only after a deliberate upward scroll (~70px),
+    // so small finger jitters and momentum never bring it back. Always shown near the top.
+    let last = window.scrollY, tick = false, up = 0, down = 0, hidden = false
     const on = () => { if (tick) return; tick = true; requestAnimationFrame(() => {
-      const y = window.scrollY; setScrolled(y > 10); setHide(y > 320 && y > last + 2); if (y < last - 2) setHide(false); last = y; tick = false }) }
+      const y = window.scrollY, d = y - last; last = y; tick = false
+      setScrolled(y > 10)
+      if (y < 120) { up = down = 0; if (hidden) { hidden = false; setHide(false) } return }
+      if (d > 0) { down += d; up = 0; if (!hidden && down > 40) { hidden = true; setHide(true) } }
+      else if (d < 0) { up -= d; down = 0; if (hidden && up > 70) { hidden = false; setHide(false) } } }) }
     on(); window.addEventListener('scroll', on, { passive: true }); return () => window.removeEventListener('scroll', on)
   }, [])
   useEffect(() => { document.documentElement.style.overflow = open ? 'hidden' : ''; return () => { document.documentElement.style.overflow = '' } }, [open])
