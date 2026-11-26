@@ -339,10 +339,10 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     const go = (d: number) => { lastUser = performance.now(); tween(snapStop(ang) - d * th, 1000) }
     ctl.current = { go }
     // gentle autoplay: glide to the next card every few seconds while visible and untouched
-    const auto = () => { autoT = window.setTimeout(auto, 3400)
-      if (!vis || dragging || anim || document.hidden || performance.now() - lastUser < 4500) return
-      tween(snapStop(ang) - th, 1500, glide) }
-    autoT = window.setTimeout(auto, 2600)
+    const auto = () => { autoT = window.setTimeout(auto, 2300)
+      if (!vis || dragging || anim || document.hidden || performance.now() - lastUser < 3000) return
+      tween(snapStop(ang) - th, 1150, glide) }
+    autoT = window.setTimeout(auto, 1800)
     const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting }, { threshold: .4 }); io.observe(st)
     // swipe/drag: the ring follows the finger 1:1, then glides on with the flick and settles on a card
     const pxPerDeg = () => Math.max(2.2, (r * Math.PI * 2) / 360 * .9)

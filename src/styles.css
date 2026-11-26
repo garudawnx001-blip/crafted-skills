@@ -950,10 +950,11 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 /* scroll reveal in place: the ring rises from lying flat to standing, as the section scrolls in (GPU only) */
 .orbit-rise{position:absolute;inset:0;transform-style:preserve-3d;transform-origin:50% 45%;will-change:transform}
 @supports (animation-timeline:view()){
-  .orbit-rise{animation:obRise cubic-bezier(.2,.7,.2,1) both;animation-timeline:--orb;animation-range:entry 0% cover 40%}
+  .orbit-rise{animation:obRise linear both;animation-timeline:--orb;animation-range:entry 0% cover 46%}
+  .orbit-dots,.orbit .sc-ui{animation:obGlow linear both;animation-timeline:--orb;animation-range:entry 40% cover 46%}
   .orbit-floor,.orbit-spot{animation:obGlow linear both;animation-timeline:--orb;animation-range:entry 30% cover 45%}
 }
-@keyframes obRise{from{transform:translate3d(0,120px,0)}to{transform:translate3d(0,0,0)}}
+@keyframes obRise{from{transform:translate3d(0,150px,0) scale(.84)}60%{transform:translate3d(0,28px,0) scale(.97)}to{transform:translate3d(0,0,0) scale(1)}}
 @keyframes obGlow{from{opacity:0}to{opacity:1}}
 .orbit-floor{opacity:1;transform:none}.orbit-spot{opacity:1}
 .orbit-item.on .orbit-face:after{animation:obSheen 1.3s cubic-bezier(.4,0,.2,1) .25s both}
