@@ -971,7 +971,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 
 /* performance: keep each card's drawing fixed while it moves (no redraw per frame), and use
    pre-drawn glows instead of large blurred shadows on 3D-transformed cards */
-.orbit-item,.orbit-face{will-change:transform}
+.orbit-item{will-change:transform}
 .orbit-face>.bcard,.orbit-item.on .orbit-face>.bcard{box-shadow:0 0 0 1px rgba(124,58,237,.08)!important}
 .orbit-back{box-shadow:none}
 .orbit-face{overflow:visible}

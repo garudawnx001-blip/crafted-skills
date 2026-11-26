@@ -379,7 +379,7 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
   }, [n, r, th])
   // the cards render once; the front-card highlight is switched directly, so turning never re-renders them
   const items = useMemo(() => children.map((c, j) => <div className="orbit-item" key={j} data-j={j} style={{ transform: `rotateY(${j * th}deg) translate3d(0,0,${r}px)` }}>
-    <div className="orbit-face"><div className="orbit-glow" aria-hidden="true" />{c}</div>
+    <div className="orbit-face">{c}</div>
     <div className="orbit-back" aria-hidden="true"><Mark3 /></div>
   </div>), [children, r, th])
   const arrow = (d: string) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
