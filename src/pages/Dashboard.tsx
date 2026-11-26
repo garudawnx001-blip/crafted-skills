@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { BUNDLES, SITE, inr, type Bundle } from '../data/site'
-import { Brand, Icon, PasswordInput, Seo, Toast, waLink } from '../components/ui'
+import { Brand, Icon, Mark, PasswordInput, Seo, Toast, waLink } from '../components/ui'
 import {
   addRole, affiliateStats, changePassword, deleteCourse, getProduct, leaderboard, logOut, requestRefund, resolveRefund,
-  saveCourse, setCourseStatus, startCourse, updateProfile, useStore, type SellerCourse, type User,
+  saveCourse, setCourseStatus, startCourse, completeCourse, saveNote, updateProfile, useStore, type SellerCourse, type User,
 } from '../lib/store'
 
 const fmtDate = (t: number) => new Date(t).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -44,7 +44,7 @@ function Shell({ user, children }: { user: User; children: ReactNode }) {
     </aside>
     <div style={{ minWidth: 0 }}>
       <nav className="app-tabs" aria-label="Dashboard sections">
-        <Link to="/" aria-label="Home" style={{ padding: '6px 10px' }}><img src="img/mark-light.webp" alt="" style={{ height: 22 }} /></Link>
+        <Link to="/" aria-label="Home" style={{ padding: '4px 8px', border: 0 }}><Mark className="bm" /></Link>
         {groups.flatMap((g) => g.items).filter((i) => i.to !== '/courses').map((i) => <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => isActive ? 'on' : ''}>{i.label}</NavLink>)}
         <a onClick={() => { logOut(); nav('/') }} role="button" tabIndex={0}>Log out</a>
       </nav>
@@ -69,7 +69,7 @@ function useMine(u: User) {
   }, [db.orders, u.id, db])
 }
 
-function progressOf(u: User, b: Bundle) { const n = b.courses.length; const s = b.courses.filter((c) => u.started?.includes(c.name)).length; return Math.round((s / n) * 100) }
+function progressOf(u: User, b: Bundle) { const n = b.courses.length; const s = b.courses.reduce((a, c) => a + (u.done?.some((d) => d.name === c.name) ? 1 : u.started?.includes(c.name) ? .4 : 0), 0); return Math.round((s / n) * 100) }
 
 /* ---------------- learner ---------------- */
 function Overview({ u }: { u: User }) {
@@ -80,6 +80,12 @@ function Overview({ u }: { u: User }) {
     <div className="kpis" style={{ marginBottom: 18 }}>
       <Kpi l="My bundles" v={owned.length} /><Kpi l="Courses unlocked" v={owned.reduce((s, b) => s + b.courses.length, 0)} e={`${live.length} available now`} />
       <Kpi l="Started" v={u.started?.length || 0} /><Kpi l="Total invested" v={inr(orders.filter((o) => o.status !== 'refunded').reduce((s, o) => s + o.amount, 0))} />
+    </div>
+    <div className="g2" style={{ gap: 18, marginBottom: 18 }}>
+      <div className="panel"><h2>This week</h2><p className="muted" style={{ fontSize: 14.5 }}>Learn a little every day. Days you learn light up.</p>
+        <div className="week">{Array.from({ length: 7 }, (_, i) => { const dt = new Date(); dt.setDate(dt.getDate() - dt.getDay() + i); const k = dt.toISOString().slice(0, 10); return <span key={i} className={`${u.days?.includes(k) ? 'on' : ''} ${i === new Date().getDay() ? 'today' : ''}`}>{'SMTWTFS'[i]}</span> })}</div></div>
+      <div className="panel" style={{ display: 'flex', gap: 18, alignItems: 'center' }}>{(() => { const total = owned.reduce((a, b) => a + b.courses.filter((c) => c.status === 'Available now').length, 0); const dn = (u.done || []).length; const v = total ? Math.round((dn / total) * 100) : 0
+        return <><div className="pring" style={{ background: `conic-gradient(var(--indigo) ${v}%, var(--lav) 0)` }}><b>{v}%</b></div><div><h2 style={{ marginBottom: 4 }}>Overall progress</h2><p className="muted" style={{ fontSize: 14.5 }}>{dn} of {total} available courses completed{dn ? ` · ${dn} certificate${dn > 1 ? 's' : ''} earned` : ''}.</p></div></> })()}</div>
     </div>
     {owned.length ? <div className="panel"><h2>Continue learning</h2><div style={{ display: 'grid', gap: 12 }}>{owned.map((b) => <BundleRow key={b.slug} u={u} b={b} />)}</div></div>
       : <div className="panel"><Empty icon="book" title="Your learning space is ready" text="Choose a course bundle to unlock your first Kannada lessons. They'll appear here right after payment."><Link to="/courses" className="btn btn-p">Explore Our Courses</Link><a className="btn btn-g" href={waLink('Hi Crafted Skills, please help me choose a bundle.')} target="_blank" rel="noopener">Ask which bundle fits</a></Empty></div>}
@@ -111,24 +117,36 @@ function Learning({ u }: { u: User }) {
 function Player({ u, slug }: { u: User; slug: string }) {
   const { owned } = useMine(u); const b = owned.find((x) => x.slug === slug)
   const [cur, setCur] = useState(() => b?.courses.find((c) => c.status === 'Available now')?.name || b?.courses[0]?.name || '')
+  const [tab, setTab] = useState<'overview' | 'notes' | 'help'>('overview')
+  const [note, setNote] = useState(u.notes?.[cur] || ''); const [toast, setToast] = useState('')
+  useEffect(() => { setNote(u.notes?.[cur] || '') }, [cur]) // eslint-disable-line
   if (!b) return <Navigate to="/dashboard/learning" replace />
   const c = b.courses.find((x) => x.name === cur)!
   const isLive = c.status === 'Available now'
+  const done = (n: string) => !!u.done?.some((d) => d.name === n)
+  const p = progressOf(u, b)
   return <>
-    <Top title={b.name} sub={<Link to="/dashboard/learning" className="link">← My learning</Link>} />
+    <Top title={b.name} sub={<Link to="/dashboard/learning" className="link">← My learning</Link>} right={<div style={{ display: 'flex', gap: 12, alignItems: 'center' }}><div className="pring" style={{ width: 52, height: 52, background: `conic-gradient(var(--indigo) ${p}%, var(--lav) 0)` }}><b style={{ width: 40, height: 40, fontSize: 12 }}>{p}%</b></div><span className="muted" style={{ fontSize: 14 }}>bundle progress</span></div>} />
     <div className="player">
       <div>
-        <div className="screen"><div><img src="img/mark-light.webp" alt="" /><h3 className="h3">{c.name}</h3>
-          <p className="muted" style={{ maxWidth: 420, margin: '10px auto 0' }}>{isLive ? 'Lesson videos for this course will play here as soon as Crafted Skills uploads them.' : 'This course is coming soon. It unlocks here automatically on release.'}</p>
-          {isLive && <button className="btn btn-p" style={{ marginTop: 18 }} onClick={() => startCourse(c.name)}>{u.started?.includes(c.name) ? 'Marked as started ✓' : 'Mark as started'}</button>}</div></div>
-        <div className="panel" style={{ marginTop: 16 }}><h2>About this course</h2><p className="muted">Learn {c.name} in Kannada — beginner-friendly and practical. Need help? <a className="link" href={waLink(`Hi, I'm ${u.name}. I have a question about ${c.name}.`)} target="_blank" rel="noopener">Message your mentor on WhatsApp</a>.</p></div>
+        <div className="screen"><div><Mark /><h3 className="h3">{c.name}</h3>
+          <p style={{ maxWidth: 440, margin: '10px auto 0' }}>{isLive ? 'Lesson videos for this course will play here as soon as Crafted Skills uploads them.' : 'This course is coming soon. It unlocks here automatically on release.'}</p>
+          {isLive && <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 18, flexWrap: 'wrap' }}>
+            {!u.started?.includes(c.name) && <button className="btn btn-w btn-sm" onClick={() => startCourse(c.name)}>Start course</button>}
+            <button className="btn btn-o btn-sm" disabled={done(c.name)} onClick={() => { completeCourse(c.name); setToast('Course completed — certificate unlocked 🎉') }}>{done(c.name) ? 'Completed ✓' : 'Mark as complete'}</button></div>}</div></div>
+        <div className="ptabs" role="tablist">{([['overview', 'Overview'], ['notes', 'My notes'], ['help', 'Ask mentor']] as const).map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
+        {tab === 'overview' && <div><h2 className="h3" style={{ fontSize: 24 }}>{c.name}</h2><p className="muted" style={{ marginTop: 8 }}>Learn {c.name} in Kannada — beginner-friendly and practical, at your own pace. Part of {b.name}.</p>
+          <div className="chips" style={{ marginTop: 14 }}><span className="chip">Kannada</span><span className="chip">Beginner-Friendly</span><span className={`chip ${isLive ? 'live' : ''}`}>{c.status}</span></div></div>}
+        {tab === 'notes' && <div className="form"><textarea className="input" placeholder={`Write notes for ${c.name}…`} value={note} onChange={(e) => setNote(e.target.value)} /><button className="btn btn-p btn-sm" style={{ justifySelf: 'start' }} onClick={() => { saveNote(c.name, note); setToast('Notes saved') }}>Save notes</button></div>}
+        {tab === 'help' && <div className="panel"><p className="muted">Stuck on something in {c.name}? Message your mentors Vaishnavi and Rachana on WhatsApp — in Kannada or English.</p><a className="btn btn-p btn-sm" style={{ marginTop: 14 }} href={waLink(`Hi, I'm ${u.name}. I have a question about ${c.name} (${b.name}).`)} target="_blank" rel="noopener">Ask on WhatsApp</a></div>}
       </div>
-      <div className="panel" style={{ alignSelf: 'start' }}><h2>Courses in this bundle</h2>
-        <div style={{ display: 'grid', gap: 8 }}>{b.courses.map((x, i) => <button key={x.name} onClick={() => setCur(x.name)} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 12, borderRadius: 14, textAlign: 'left', border: '1px solid ' + (x.name === cur ? 'rgba(179,99,243,.5)' : 'var(--line)'), background: x.name === cur ? 'rgba(179,99,243,.12)' : 'var(--panel)' }}>
-          <span style={{ width: 30, height: 30, borderRadius: 9, display: 'grid', placeItems: 'center', background: 'var(--panel2)', fontSize: 13, fontWeight: 700 }}>{u.started?.includes(x.name) ? '✓' : i + 1}</span>
-          <span style={{ flex: 1 }}><b style={{ display: 'block', fontSize: 14.5 }}>{x.name}</b><span className={`st ${x.status === 'Available now' ? 'live' : 'soon'}`} style={{ display: 'inline-block', marginTop: 4 }}>{x.status}</span></span></button>)}</div>
+      <div className="panel" style={{ alignSelf: 'start' }}><h2>Course content</h2>
+        <div style={{ display: 'grid', gap: 8 }}>{b.courses.map((x, i) => <button key={x.name} className={`lesson ${x.name === cur ? 'on' : ''}`} onClick={() => setCur(x.name)}>
+          <span className={`n ${done(x.name) ? 'done' : ''}`}>{done(x.name) ? '✓' : i + 1}</span>
+          <span style={{ flex: 1 }}><b style={{ display: 'block', fontSize: 14.5, color: 'var(--ink)' }}>{x.name}</b><span className={`st ${x.status === 'Available now' ? 'live' : 'soon'}`} style={{ display: 'inline-block', marginTop: 4 }}>{x.status}</span></span></button>)}</div>
       </div>
     </div>
+    {toast && <Toast msg={toast} onDone={() => setToast('')} />}
   </>
 }
 
@@ -145,7 +163,7 @@ function Purchases({ u }: { u: User }) {
           {x.status === 'paid' && within24(x.createdAt) && <button className="link" style={{ marginLeft: 14 }} onClick={() => { requestRefund(x.id); setToast('Refund request sent to Crafted Skills') }}>Request refund</button>}</td></tr>)}
     </tbody></table></div> : <div className="panel"><Empty icon="receipt" title="No purchases yet" text="Your receipts will appear here."><Link to="/courses" className="btn btn-p">Explore Our Courses</Link></Empty></div>}
     {o && <div className="pay-veil" onClick={(e) => e.target === e.currentTarget && setRec(null)}><div className="pay" style={{ padding: 28 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}><img src="img/mark.webp" alt="" style={{ width: 44 }} /><div><b style={{ fontSize: 18 }}>Crafted Skills</b><div style={{ color: '#6b5e86', fontSize: 13 }}>Payment receipt · test mode</div></div></div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}><Mark className="bm" /><div><b style={{ fontSize: 18 }}>Crafted Skills</b><div style={{ color: '#6b5e86', fontSize: 13 }}>Payment receipt · test mode</div></div></div>
       {[['Order', o.id], ['Bundle', getProduct(o.bundle)?.name], ['Billed to', `${u.name} · ${u.email}`], ['Date', fmtTime(o.createdAt)], ['Method', o.method], ['Payment ID', o.paymentId], ['Amount', inr(o.amount)]].map(([k, v]) =>
         <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 14, padding: '9px 0', borderBottom: '1px solid #eee', fontSize: 14.5 }}><span style={{ color: '#6b5e86' }}>{k}</span><b style={{ textAlign: 'right' }}>{v}</b></div>)}
       <div style={{ display: 'flex', gap: 10, marginTop: 20 }}><button className="btn btn-p" style={{ flex: 1 }} onClick={() => { try { window.print() } catch { /* blocked in preview frame */ } }}>Print / save PDF</button><button className="btn" style={{ color: '#5a17c4' }} onClick={() => setRec(null)}>Close</button></div>
@@ -155,9 +173,15 @@ function Purchases({ u }: { u: User }) {
 }
 
 function Certificates({ u }: { u: User }) {
-  const { owned } = useMine(u)
+  const { owned } = useMine(u); const list = u.done || []
   return <><Top title="Certificates" sub="Earned when you complete a course." />
-    <div className="panel"><Empty icon="award" title="No certificates yet" text={owned.length ? 'Finish the lessons of any course and your Crafted Skills certificate will appear here, ready to download and share.' : 'Enroll in a bundle and complete a course to earn your first certificate.'}>{!owned.length && <Link to="/courses" className="btn btn-p">Explore Our Courses</Link>}</Empty></div></>
+    {list.length ? <div className="g2" style={{ gap: 18 }}>{list.map((d) => <div key={d.name} className="panel">
+      <div className="cert"><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Mark /><b style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 18, color: 'var(--indigo)' }}>Crafted Skills</b></div>
+        <div><div className="dim" style={{ fontSize: 12, letterSpacing: '.16em', textTransform: 'uppercase' }}>Certificate of completion</div><h4>{u.name}</h4><div className="muted" style={{ fontSize: 14 }}>has completed <b style={{ color: 'var(--ink)' }}>{d.name}</b></div></div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--muted)' }}><span>{fmtDate(d.at)}</span><span>Vaishnavi · Rachana</span></div></div>
+      <a className="btn btn-g btn-sm" style={{ marginTop: 14 }} target="_blank" rel="noopener" href={`https://wa.me/?text=${encodeURIComponent(`I completed ${d.name} with Crafted Skills 🎉`)}`}>Share on WhatsApp</a>
+    </div>)}</div>
+      : <div className="panel"><Empty icon="award" title="No certificates yet" text={owned.length ? 'Open a course and mark it complete — your Crafted Skills certificate appears here, ready to share.' : 'Enroll in a bundle and complete a course to earn your first certificate.'}>{owned.length ? <Link to="/dashboard/learning" className="btn btn-p">Go to my learning</Link> : <Link to="/courses" className="btn btn-p">Explore Our Courses</Link>}</Empty></div>}</>
 }
 
 function Profile({ u }: { u: User }) {
@@ -189,7 +213,7 @@ function Profile({ u }: { u: User }) {
 function Bars({ data }: { data: { a: number; b: number; l: string }[] }) {
   const max = Math.max(1, ...data.map((d) => d.a))
   return <svg viewBox={`0 0 ${data.length * 20} 110`} preserveAspectRatio="none" role="img" aria-label="Clicks and sales for the last 14 days">
-    {data.map((d, i) => <g key={i}><rect x={i * 20 + 3} y={100 - (d.a / max) * 92} width="8" height={Math.max(1.5, (d.a / max) * 92)} rx="2" fill="#b363f3" /><rect x={i * 20 + 12} y={100 - (d.b / max) * 92} width="5" height={Math.max(1.5, (d.b / max) * 92)} rx="2" fill="#e5c8ff" /></g>)}
+    {data.map((d, i) => <g key={i}><rect x={i * 20 + 3} y={100 - (d.a / max) * 92} width="8" height={Math.max(1.5, (d.a / max) * 92)} rx="2" fill="#320182" /><rect x={i * 20 + 12} y={100 - (d.b / max) * 92} width="5" height={Math.max(1.5, (d.b / max) * 92)} rx="2" fill="#b363f3" /></g>)}
     <line x1="0" x2={data.length * 20} y1="100.5" y2="100.5" stroke="rgba(214,186,255,.2)" />
   </svg>
 }
@@ -201,13 +225,13 @@ function Partner({ u }: { u: User }) {
   const conv = s.clicks.length ? ((s.sales.length / s.clicks.length) * 100).toFixed(1) + '%' : '—'
   const copy = (t: string) => { navigator.clipboard?.writeText(t).then(() => setToast('Link copied'), () => setToast('Copy failed — select and copy manually')) }
   return <>
-    <Top title={q.get('welcome') ? 'Welcome to the affiliate program 🎉' : 'Affiliate earnings'} sub={<>Your code <b style={{ color: '#fff' }}>{u.refCode}</b></>} right={<Link to="/partner/links" className="btn btn-p btn-sm">Get my links</Link>} />
+    <Top title={q.get('welcome') ? 'Welcome to the affiliate program 🎉' : 'Affiliate earnings'} sub={<>Your code <b style={{ color: 'var(--indigo)' }}>{u.refCode}</b></>} right={<Link to="/partner/links" className="btn btn-p btn-sm">Get my links</Link>} />
     <div className="kpis" style={{ marginBottom: 18 }}>
       <Kpi l="Link clicks" v={s.clicks.length} e="all time" /><Kpi l="Sign-ups" v={s.signups.length} e="joined with your link" />
       <Kpi l="Sales" v={s.sales.length} e={`conversion ${conv}`} /><Kpi l="Commission" v={rate != null ? inr(Math.round((s.value * rate) / 100)) : inr(0)} e={rate != null ? `${rate}% of ${inr(s.value)} sales` : `on ${inr(s.value)} sales · rate set by Crafted Skills`} />
     </div>
     <div className="g2" style={{ gap: 18 }}>
-      <div className="chart"><div className="lg"><span><i style={{ background: 'var(--violet)' }} />Clicks</span><span><i style={{ background: '#e5c8ff' }} />Sales</span><span style={{ marginLeft: 'auto' }}>Last 14 days</span></div><Bars data={data} /></div>
+      <div className="chart"><div className="lg"><span><i style={{ background: 'var(--indigo)' }} />Clicks</span><span><i style={{ background: 'var(--vio2)' }} />Sales</span><span style={{ marginLeft: 'auto' }}>Last 14 days</span></div><Bars data={data} /></div>
       <div className="panel"><h2>Your main link</h2><div className="copyrow"><input className="input" readOnly value={refLink(u.refCode)} onFocus={(e) => e.target.select()} aria-label="Your referral link" /><button className="btn btn-p btn-sm" onClick={() => copy(refLink(u.refCode))}><Icon n="copy" s={16} />Copy</button></div>
         <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}><a className="btn btn-g btn-sm" target="_blank" rel="noopener" href={`https://wa.me/?text=${encodeURIComponent('Learn digital skills in Kannada with Crafted Skills 💜 ' + refLink(u.refCode))}`}>Share on WhatsApp</a><Link to="/partner/links" className="btn btn-g btn-sm">Links for each bundle</Link></div>
         <p className="dim" style={{ fontSize: 13, marginTop: 12 }}>Anyone who opens your link is linked to you for 30 days.</p></div>

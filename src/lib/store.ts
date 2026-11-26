@@ -11,6 +11,9 @@ export type User = {
   salt: string; hash: string
   payout?: { upi?: string; holder?: string; bank?: string; ifsc?: string; account?: string }
   started?: string[] // course names started
+  done?: { name: string; at: number }[] // completed courses (for certificates)
+  days?: string[] // yyyy-mm-dd days with learning activity
+  notes?: Record<string, string>
 }
 export type Order = {
   id: string; userId: string; bundle: string; amount: number; method: string
@@ -94,7 +97,11 @@ export function updateProfile(p: Partial<Pick<User, 'name' | 'phone' | 'payout'>
 }
 export function addRole(r: Role) { const u = currentUser(); if (u && r !== 'admin' && !u.roles.includes(r)) { u.roles.push(r); commit() } }
 export const becomeAffiliate = () => addRole('affiliate')
-export function startCourse(name: string) { const u = currentUser(); if (u) { u.started = [...new Set([...(u.started || []), name])]; commit() } }
+const today = () => new Date().toISOString().slice(0, 10)
+function touchDay(u: User) { u.days = [...new Set([...(u.days || []), today()])].slice(-60) }
+export function startCourse(name: string) { const u = currentUser(); if (u) { u.started = [...new Set([...(u.started || []), name])]; touchDay(u); commit() } }
+export function completeCourse(name: string) { const u = currentUser(); if (!u) return; if (!u.started?.includes(name)) u.started = [...(u.started || []), name]; if (!u.done?.some((d) => d.name === name)) u.done = [...(u.done || []), { name, at: Date.now() }]; touchDay(u); commit() }
+export function saveNote(course: string, text: string) { const u = currentUser(); if (!u) return; u.notes = { ...(u.notes || {}), [course]: text }; commit() }
 
 // Referral tracking
 export function captureRef(code: string, path: string) {

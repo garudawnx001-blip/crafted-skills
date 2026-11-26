@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { SITE, TESTIMONIALS } from '../data/site'
-import { Brand, Icon, PasswordInput, Seo } from '../components/ui'
+import { Brand, Icon, Mark, PasswordInput, Seo } from '../components/ui'
 import { emailExists, logIn, resetPassword, signUp, type Role, type User } from '../lib/store'
 
 const ROLES: { r: Exclude<Role, 'admin'>; t: string; s: string }[] = [
@@ -17,12 +17,12 @@ function Art() {
   return <aside className="auth-art">
     <Brand />
     <div>
-      <img className="mk" src="img/mark-light.webp" alt="" />
-      <p className="q">Learn in Kannada.<br />Grow with Skills.<br /><span className="grad">Build Your Dreams from Home.</span></p>
+      <Mark className="bm bigm" />
+      <p className="q">Learn in Kannada.<br />Grow with Skills.<br /><span>Build Your Dreams from Home.</span></p>
     </div>
-    <figure className="card" style={{ display: 'flex', gap: 14, alignItems: 'center', padding: 16 }}>
-      <img src={t.photo} alt="" style={{ width: 52, height: 52, borderRadius: 14, objectFit: 'cover' }} />
-      <figcaption><b>“I understood my own value.” ❤️</b><div className="dim" style={{ fontSize: 13 }}>{t.name}, Crafted Skills student</div></figcaption>
+    <figure>
+      <img src={t.photo} alt="" />
+      <figcaption><b>“I understood my own value.” ❤️</b><div>{t.name}, Crafted Skills student</div></figcaption>
     </figure>
   </aside>
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { SITE, TERMS, inr } from '../data/site'
-import { Icon, Seo } from '../components/ui'
+import { Icon, Mark, Seo } from '../components/ui'
 import { getProduct, ownsBundle, placeOrder, useStore, type Order } from '../lib/store'
 import { NotFound, PageHero } from './Public'
 
@@ -27,7 +27,7 @@ function PaySheet({ amount, name, onClose, onPaid }: { amount: number; name: str
   const fmtExp = (v: string) => { const d = v.replace(/\D/g, '').slice(0, 4); return d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d }
   return <div className="pay-veil" onClick={(e) => { if (e.target === e.currentTarget && stage === 'form') onClose() }} role="dialog" aria-modal="true" aria-label="Payment">
     <div className="pay">
-      <div className="pay-h"><img src="img/mark.webp" alt="" /><div><b>Crafted Skills</b><small>{name}</small></div><div className="amt"><small>Amount</small><b>{inr(amount)}</b></div></div>
+      <div className="pay-h"><Mark /><div><b>Crafted Skills</b><small>{name}</small></div><div className="amt"><small>Amount</small><b>{inr(amount)}</b></div></div>
       <div className="testbar">TEST MODE · No money will be charged. Live Razorpay payments start after launch.</div>
       {stage === 'form' && <>
         <div className="pay-b">
@@ -53,7 +53,7 @@ function PaySheet({ amount, name, onClose, onPaid }: { amount: number; name: str
         <p style={{ color: '#6b5e86', margin: '6px 0 4px' }}>{inr(order.amount)} · Order {order.id}</p>
         <p style={{ color: '#8a7fa0', fontSize: 13 }}>Payment ID {order.paymentId}</p>
         <button className="btn btn-p" style={{ width: '100%', marginTop: 20 }} onClick={() => nav('/dashboard/learning?new=' + order.bundle)}>Start learning</button>
-        <button className="btn" style={{ width: '100%', marginTop: 8, color: '#5a17c4' }} onClick={() => nav('/dashboard/purchases')}>View receipt</button>
+        <button className="btn" style={{ width: '100%', marginTop: 8, color: 'var(--indigo)' }} onClick={() => nav('/dashboard/purchases')}>View receipt</button>
       </div>}
     </div>
   </div>

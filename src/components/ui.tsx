@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { SITE, type Bundle, inr } from '../data/site'
+import { LOGO_PATHS, LOGO_VB } from '../data/logo'
 import { logOut, useStore } from '../lib/store'
 
 const P = (d: string) => <path d={d} />
@@ -30,6 +31,7 @@ const icons: Record<string, ReactNode> = {
   copy: <><rect x="8" y="8" width="12" height="12" rx="2" />{P('M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2')}</>,
   mail: <><rect x="3" y="5" width="18" height="14" rx="2" />{P('M3 7l9 6 9-6')}</>,
   phone: P('M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2'),
+  search: <><circle cx="11" cy="11" r="7" />{P('M20 20l-3.5-3.5')}</>,
   left: P('M15 5l-7 7 7 7'), right: P('M9 5l7 7-7 7'), check: P('M5 12l5 5 9-10'), lock: <><rect x="4" y="10" width="16" height="11" rx="2" />{P('M8 10V7a4 4 0 0 1 8 0v3')}</>,
 }
 export function Icon({ n, s = 20 }: { n: string; s?: number }) {
@@ -41,8 +43,11 @@ export const FbIcon = () => <svg viewBox="0 0 24 24" fill="currentColor"><path d
 
 export const waLink = (msg = 'Hi Crafted Skills, I would like to know more about your courses.') => `https://wa.me/${SITE.phoneRaw}?text=${encodeURIComponent(msg)}`
 
-export function Brand({ light = true }: { light?: boolean }) {
-  return <Link to="/" className="brand" aria-label="Crafted Skills home"><img src={light ? 'img/mark-light.webp' : 'img/mark.webp'} alt="" width="40" height="42" /><b>Crafted <span>Skills</span></b></Link>
+export function Mark({ className = 'bm' }: { className?: string }) {
+  return <svg className={className} viewBox={LOGO_VB} aria-hidden="true">{LOGO_PATHS.map((p, i) => <path key={i} className={p.c} d={p.d} fillRule="evenodd" />)}</svg>
+}
+export function Brand({ id }: { id?: string }) {
+  return <Link to="/" className="brand" id={id} aria-label="Crafted Skills home"><Mark /><b>Crafted <span>Skills</span></b></Link>
 }
 
 export function useReveal() {
@@ -77,7 +82,7 @@ export function Header() {
   return <>
     <header className={`hdr ${scrolled || open ? 'scrolled' : ''} ${hide && !open ? 'hide' : ''}`}>
       <div className="wrap hdr-in">
-        <Brand />
+        <Brand id="hdr-brand" />
         <nav className="nav" aria-label="Main">{NAV.map(([to, l]) => <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'on' : ''}>{l}</NavLink>)}</nav>
         <div className="acts">
           {user ? <div className="menu">
@@ -130,14 +135,15 @@ export function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
   return <div className="toast" role="status">{msg}</div>
 }
 
-export function BundleCard({ b, front, onOpen, eager }: { b: Bundle; front?: boolean; onOpen?: () => void; eager?: boolean }) {
-  return <article className={`bcard ${front ? 'front' : ''}`}>
-    <img src={b.image} alt={b.name + ' course bundle'} loading={eager ? 'eager' : 'lazy'} width="1200" height="391" draggable={false} />
+export function BundleCard({ b, eager }: { b: Bundle; eager?: boolean }) {
+  const live = b.courses.filter((c) => c.status === 'Available now').length
+  return <article className="bcard">
+    <Link to={`/courses/${b.slug}`} className="im" tabIndex={-1} aria-hidden="true"><img src={b.image} alt="" loading={eager ? 'eager' : 'lazy'} width="1200" height="391" draggable={false} /></Link>
     <div className="bd">
-      <h3>{b.name}</h3>
+      <h3><Link to={`/courses/${b.slug}`}>{b.name}</Link></h3>
       <ul>{b.courses.map((c) => <li key={c.name}><span>{c.name}</span><span className={`st ${c.status === 'Available now' ? 'live' : 'soon'}`}>{c.status}</span></li>)}</ul>
-      <div className="ft"><span className="price">{inr(b.price)}</span>
-        {onOpen ? <button className="btn btn-p btn-sm" onClick={onOpen}>View bundle</button> : <Link className="btn btn-p btn-sm" to={`/courses/${b.slug}`}>View bundle</Link>}
+      <div className="ft"><div><div className="price">{inr(b.price)}</div><div className="dim" style={{ fontSize: 13 }}>{b.courses.length} courses · {live ? `${live} available now` : 'launching soon'}</div></div>
+        <Link className="btn btn-p btn-sm" to={`/courses/${b.slug}`}>View bundle</Link>
       </div>
     </div>
   </article>
@@ -146,23 +152,6 @@ export function BundleCard({ b, front, onOpen, eager }: { b: Bundle; front?: boo
 export function PasswordInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   const [show, setShow] = useState(false)
   return <div className="pw"><input {...props} type={show ? 'text' : 'password'} className="input" /><button type="button" className="eye" onClick={() => setShow(!show)}>{show ? 'Hide' : 'Show'}</button></div>
-}
-
-export function useTilt<T extends HTMLElement>() {
-  const ref = useRef<T>(null)
-  useEffect(() => {
-    const el = ref.current; if (!el || !matchMedia('(hover:hover) and (pointer:fine)').matches || matchMedia('(prefers-reduced-motion:reduce)').matches) return
-    let raf = 0
-    const move = (e: PointerEvent) => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => {
-      const r = el.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5
-      el.style.transform = `rotateY(${x * 10}deg) rotateX(${-y * 10}deg)`
-      el.querySelectorAll<HTMLElement>('[data-d]').forEach((c) => { const d = +c.dataset.d!; c.style.transform = `translate3d(${x * d}px,${y * d}px,0)` }) }) }
-    const leave = () => { el.style.transform = ''; el.querySelectorAll<HTMLElement>('[data-d]').forEach((c) => (c.style.transform = '')) }
-    const host = el.parentElement!; host.addEventListener('pointermove', move); host.addEventListener('pointerleave', leave)
-    el.style.transition = 'transform .6s cubic-bezier(.2,.8,.2,1)'
-    return () => { host.removeEventListener('pointermove', move); host.removeEventListener('pointerleave', leave); cancelAnimationFrame(raf) }
-  }, [])
-  return ref
 }
 
 export function Seo({ title, desc }: { title: string; desc?: string }) {

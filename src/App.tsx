@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import Opening, { shouldOpen } from './components/Opening'
 import { HashRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { Footer, Header, WhatsAppFab, useReveal } from './components/ui'
 import Home from './pages/Home'
@@ -11,8 +12,13 @@ import { captureRef } from './lib/store'
 const APP = /^\/(dashboard|partner|studio|admin)(\/|$)/
 const AUTH = /^\/(login|signup|forgot)(\/|$)/
 
+const OPEN_FIRST = shouldOpen()
+if (OPEN_FIRST) document.documentElement.classList.add('opening-on')
+
 function Frame() {
   const loc = useLocation()
+  const [opening, setOpening] = useState(OPEN_FIRST)
+  const done = useCallback(() => setOpening(false), [])
   useReveal()
   useEffect(() => {
     const ref = new URLSearchParams(loc.search).get('ref') || new URLSearchParams(window.location.search).get('ref')
@@ -21,6 +27,7 @@ function Frame() {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior }) }, [loc.pathname])
   const app = APP.test(loc.pathname), auth = AUTH.test(loc.pathname)
   return <>
+    {opening && <Opening onDone={done} />}
     {!app && !auth && <Header />}
     <Routes>
       <Route path="/" element={<Home />} />
