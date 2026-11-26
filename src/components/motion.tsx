@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, type ReactNode } from 'react'
+import React, { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 // The full experience runs on every phone (many Android phones switch animations off to save battery).
 // Phones that ask for less motion only lose the endless ambient loops (see the 'lite' class in main.tsx).
@@ -299,102 +299,88 @@ export function ScrollDeck({ head, children, after }: { head: ReactNode; childre
   </div>
 }
 
-function Mark3() { return <span className="ob-logo"><img src="img/mark-light.webp" alt="" loading="lazy" /><b>Crafted Skills</b></span> }
+function Mark3() { return <span className="ob-logo"><img src="img/mark.webp" alt="" loading="lazy" /><b>Crafted Skills</b></span> }
 
 /* Orbit: the course cards sit around a 3D ring that turns by itself, pausing a moment on each card.
    The turning is a Web Animation on transform only, so it runs on the graphics card (no main-thread work
    per frame). Hover or touch pauses it; drag spins it; tapping a side card brings it to the front. */
 export function Orbit({ head, children }: { head: ReactNode; children: ReactNode[] }) {
-  const n = children.length
+  const n = children.length, th = 360 / n, TILT = -7
   const stage = useRef<HTMLDivElement>(null), ring = useRef<HTMLDivElement>(null)
-  const anim = useRef<Animation | null>(null)
+  const ctl = useRef<{ go: (d: number) => void } | null>(null)
   const [idx, setIdx] = useState(0), [r, setR] = useState(380)
-  const STEP = 3600, DUR = n * STEP, th = 360 / n, TILT = -7
   useEffect(() => {
     const f = () => { const el = stage.current; if (!el) return; const cw = (el.querySelector('.orbit-item') as HTMLElement | null)?.offsetWidth || 320
       setR(Math.round(cw / 2 / Math.tan(Math.PI / n) + Math.min(70, cw * .2))) }
     f(); addEventListener('resize', f); return () => removeEventListener('resize', f)
   }, [n])
+  // Motion is driven by the ring's angle: one transform per frame, and the loop sleeps when nothing moves.
   useEffect(() => {
     const g = ring.current, st = stage.current; if (!g || !st) return
-    // each step: hold the front card ~68%, then a slow cinematic glide to the next
-    const frames: Keyframe[] = []
-    for (let i = 0; i <= n; i++) {
-      const tf = `translate3d(0,0,${-r}px) rotateX(${TILT}deg) rotateY(${-i * th}deg)`
-      frames.push({ offset: i / n, transform: tf, easing: 'linear' })
-      if (i < n) frames.push({ offset: (i + .68) / n, transform: tf, easing: 'cubic-bezier(.7,0,.25,1)' })
-    }
-    const prev = anim.current, t0 = prev ? Number(prev.currentTime) || 0 : 0; prev?.cancel()
-    const a = g.animate(frames, { duration: DUR, iterations: Infinity }); a.currentTime = t0; anim.current = a
-    const now = () => Number(a.currentTime) || 0
-    const front = () => { const t = (now() % DUR + DUR) % DUR; return Math.round(t / STEP) % n }
-    let paused = false, resumeT = 0, vis = false, landed = false, tw = 0, dropT = 0
-    a.pause()
-    const sync = () => { const i = front(); setIdx((p) => (p === i ? p : i)) }
-    const tick = window.setInterval(sync, 150)
-    const pause = () => { paused = true; clearTimeout(resumeT); a.pause() }
-    const resume = (ms = 2500) => { clearTimeout(resumeT); resumeT = window.setTimeout(() => { paused = false; if (vis && landed) a.play() }, ms) }
-    const ease = (k: number) => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2
-    const goTime = (target: number, ms = 900) => { cancelAnimationFrame(tw); const from = now(), t1 = performance.now()
-      const step = (x: number) => { const k = Math.min(1, (x - t1) / ms); a.currentTime = from + (target - from) * ease(k); if (k < 1) tw = requestAnimationFrame(step) }
-      tw = requestAnimationFrame(step) }
-    // where the deck starts: exactly on the hero's "My learning" card, so the cards fly out of it
-    const place = () => { const m = document.querySelector('.hero .m1') as HTMLElement | null, it = st.querySelector('.orbit-item') as HTMLElement | null; if (!m || !it) return
-      const mb = m.getBoundingClientRect(), sb = st.getBoundingClientRect(), cw = it.offsetWidth, ch = it.offsetHeight || 460
-      const fx = mb.left + mb.width / 2 - (sb.left + sb.width / 2), fy = (mb.top + mb.height / 2) - (sb.top + 40 + ch / 2)
-      st.style.setProperty('--fx', `${Math.round(fx)}px`); st.style.setProperty('--fy', `${Math.round(fy)}px`); st.style.setProperty('--fs', String(Math.max(.4, Math.min(.8, mb.width / cw)))) }
-    const onSkill = (e: Event) => { const b = st.getBoundingClientRect(); if (landed || b.top < innerHeight) return
-      const j = (e as CustomEvent<number>).detail; a.currentTime = j * STEP; sync() }
-    window.addEventListener('cs-skill', onSkill)
-    // assembly is scroll-driven in CSS; the ring starts turning once the cards have assembled
-    const check = () => { const b = st.getBoundingClientRect(); vis = b.bottom > 0 && b.top < innerHeight
-      const done = b.top + b.height * .5 <= innerHeight * .56
-      if (done && !landed) { landed = true; st.classList.add('landed'); if (!paused) a.play() }
-      else if (!done && landed) { landed = false; st.classList.remove('landed'); a.pause() }
-      else if (landed) { if (!vis) a.pause(); else if (!paused && a.playState !== 'running') a.play() } }
-    let cq = 0; const onS = () => { if (!cq) cq = requestAnimationFrame(() => { cq = 0; check() }) }
-    const onR = () => { place(); onS() }
-    addEventListener('scroll', onS, { passive: true }); addEventListener('resize', onR); place(); check(); const pl = window.setTimeout(place, 1200)
-    const io = { disconnect: () => { removeEventListener('scroll', onS); removeEventListener('resize', onR); window.removeEventListener('cs-skill', onSkill); cancelAnimationFrame(cq); clearTimeout(pl) } }
-    // swipe / drag to spin (touch and mouse); a tap stays a tap
-    let down = false, sx = 0, sy = 0, st0 = 0, moved = 0, horiz = false
-    const pd = (e: PointerEvent) => { if (!landed) return; down = true; moved = 0; horiz = false; sx = e.clientX; sy = e.clientY; st0 = now(); cancelAnimationFrame(tw); pause() }
-    const pm = (e: PointerEvent) => { if (!down) return; const dx = e.clientX - sx, dy = e.clientY - sy
-      if (!horiz && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) horiz = true
-      moved = Math.max(moved, Math.abs(dx)); if (horiz) a.currentTime = st0 - dx * (STEP / Math.max(160, r * .75)) }
-    const pu = () => { if (!down) return; down = false
-      if (horiz) goTime(Math.round(now() / STEP) * STEP, 600); resume(3200) }
-    const click = (e: MouseEvent) => { if (horiz && moved > 8) { e.preventDefault(); e.stopPropagation(); return }
-      const it = (e.target as HTMLElement).closest('.orbit-item') as HTMLElement | null; if (!it || !landed) return
+    let ang = 0, raf = 0, anim: { from: number; to: number; t0: number; dur: number; ease: (k: number) => number } | null = null
+    let dragging = false, sx = 0, sy = 0, sa = 0, horiz = false, moved = 0, lastX = 0, lastT = 0, vel = 0
+    let vis = false, lastUser = -1e9, autoT = 0
+    const apply = () => { g.style.transform = `translate3d(0,0,${-r}px) rotateX(${TILT}deg) rotateY(${ang.toFixed(3)}deg)` }
+    const front = () => ((Math.round(-ang / th) % n) + n) % n
+    let shownI = -1
+    const sync = () => { const i = front(); if (i === shownI) return; shownI = i
+      g.querySelectorAll<HTMLElement>('.orbit-item').forEach((el, j) => { el.classList.toggle('on', j === i); el.setAttribute('aria-hidden', String(j !== i)) })
+      setIdx(i) }
+    const inOut = (k: number) => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2
+    const out = (k: number) => 1 - Math.pow(1 - k, 3)
+    const loop = (t: number) => { raf = 0
+      if (anim) { const k = Math.min(1, (t - anim.t0) / anim.dur); ang = anim.from + (anim.to - anim.from) * anim.ease(k); if (k >= 1) anim = null }
+      apply(); sync(); if (anim) raf = requestAnimationFrame(loop) }
+    const kick = () => { if (!raf) raf = requestAnimationFrame(loop) }
+    const tween = (to: number, dur: number, ease = inOut) => { anim = { from: ang, to, t0: performance.now(), dur, ease }; kick() }
+    const snapStop = (a: number) => Math.round(a / th) * th
+    const go = (d: number) => { lastUser = performance.now(); tween(snapStop(ang) - d * th, 1000) }
+    ctl.current = { go }
+    // gentle autoplay: glide to the next card every few seconds while visible and untouched
+    const auto = () => { autoT = window.setTimeout(auto, 3400)
+      if (!vis || dragging || anim || document.hidden || performance.now() - lastUser < 4500) return
+      tween(snapStop(ang) - th, 1250) }
+    autoT = window.setTimeout(auto, 2600)
+    const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting }, { threshold: .4 }); io.observe(st)
+    // swipe/drag: the ring follows the finger 1:1, then glides on with the flick and settles on a card
+    const pxPerDeg = () => Math.max(2.2, (r * Math.PI * 2) / 360 * .9)
+    const pd = (e: PointerEvent) => { dragging = true; horiz = false; moved = 0; sx = lastX = e.clientX; sy = e.clientY; lastT = performance.now(); vel = 0; sa = ang; anim = null; lastUser = performance.now() }
+    const pm = (e: PointerEvent) => { if (!dragging) return; const dx = e.clientX - sx, dy = e.clientY - sy
+      if (!horiz) { if (Math.abs(dx) > 7 && Math.abs(dx) > Math.abs(dy) * 1.1) horiz = true; else if (Math.abs(dy) > 10) { dragging = false; return } else return }
+      moved = Math.max(moved, Math.abs(dx)); const now = performance.now(), dt = Math.max(1, now - lastT)
+      vel = .75 * ((e.clientX - lastX) / dt) + .25 * vel; lastX = e.clientX; lastT = now
+      ang = sa + dx / pxPerDeg(); kick() }
+    const pu = () => { if (!dragging) return; dragging = false; lastUser = performance.now(); if (!horiz) return
+      const fling = Math.max(-th * 2.2, Math.min(th * 2.2, (vel * 260) / pxPerDeg()))
+      const to = snapStop(ang + fling), dist = Math.abs(to - ang)
+      tween(to, Math.max(420, Math.min(1100, 380 + dist * 9)), out) }
+    const click = (e: MouseEvent) => { if (horiz && moved > 7) { e.preventDefault(); e.stopPropagation(); horiz = false; return }
+      const it = (e.target as HTMLElement).closest('.orbit-item') as HTMLElement | null; if (!it) return
       const j = Number(it.dataset.j), cur = front(); if (j === cur) return
-      e.preventDefault(); e.stopPropagation(); pause()
-      let d = j - cur; if (d > n / 2) d -= n; if (d < -n / 2) d += n
-      goTime(Math.round(now() / STEP) * STEP + d * STEP); resume(3800) }
-    const he = (e: PointerEvent) => { if (e.pointerType === 'mouse' && landed) pause() }, hl = (e: PointerEvent) => { if (e.pointerType === 'mouse' && !down) resume(900) }
+      e.preventDefault(); e.stopPropagation(); let d = j - cur; if (d > n / 2) d -= n; if (d < -n / 2) d += n; go(d) }
+    const he = (e: PointerEvent) => { if (e.pointerType === 'mouse') lastUser = performance.now() + 1e6 }, hl = (e: PointerEvent) => { if (e.pointerType === 'mouse') lastUser = performance.now() - 2500 }
     st.addEventListener('pointerdown', pd); addEventListener('pointermove', pm, { passive: true }); addEventListener('pointerup', pu); addEventListener('pointercancel', pu)
     st.addEventListener('click', click, true); st.addEventListener('pointerenter', he); st.addEventListener('pointerleave', hl)
-    sync()
-    return () => { clearInterval(tick); clearTimeout(resumeT); clearTimeout(dropT); cancelAnimationFrame(tw); io.disconnect(); st.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); removeEventListener('pointercancel', pu); st.removeEventListener('click', click, true); st.removeEventListener('pointerenter', he); st.removeEventListener('pointerleave', hl) }
-  }, [n, r, th, DUR])
-  const go = (d: number) => { const a = anim.current; if (!a) return; a.pause(); const t = Number(a.currentTime) || 0; const target = (Math.round(t / STEP) + d) * STEP
-    const t1 = performance.now(); const step = (x: number) => { const k = Math.min(1, (x - t1) / 900), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; a.currentTime = t + (target - t) * e; if (k < 1) requestAnimationFrame(step); else setTimeout(() => a.play(), 3500) }
-    requestAnimationFrame(step) }
+    apply(); sync()
+    return () => { cancelAnimationFrame(raf); clearTimeout(autoT); io.disconnect(); st.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); removeEventListener('pointercancel', pu); st.removeEventListener('click', click, true); st.removeEventListener('pointerenter', he); st.removeEventListener('pointerleave', hl) }
+  }, [n, r, th])
+  // the cards render once; the front-card highlight is switched directly, so turning never re-renders them
+  const items = useMemo(() => children.map((c, j) => <div className="orbit-item" key={j} data-j={j} style={{ transform: `rotateY(${j * th}deg) translate3d(0,0,${r}px)` }}>
+    <div className="orbit-face">{c}</div>
+    <div className="orbit-back" aria-hidden="true"><Mark3 /></div>
+  </div>), [children, r, th])
   const arrow = (d: string) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
   return <div className="orbit">
     <div className="head-row"><div>{head}</div>
       <div className="sc-ui"><span className="sc-count" aria-live="polite"><b key={idx}>{String(idx + 1).padStart(2, '0')}</b> / {String(n).padStart(2, '0')}</span>
-        <div className="rail-ui"><button onClick={() => go(-1)} aria-label="Previous bundle">{arrow('M15 5l-7 7 7 7')}</button><button onClick={() => go(1)} aria-label="Next bundle">{arrow('M9 5l7 7-7 7')}</button></div></div></div>
-    <div className="orbit-stage" ref={stage} style={{ ['--r' as string]: `${r}px` }}>
+        <div className="rail-ui"><button onClick={() => ctl.current?.go(-1)} aria-label="Previous bundle">{arrow('M15 5l-7 7 7 7')}</button><button onClick={() => ctl.current?.go(1)} aria-label="Next bundle">{arrow('M9 5l7 7-7 7')}</button></div></div></div>
+    <div className="orbit-stage" ref={stage}>
       <div className="orbit-spot" aria-hidden="true" />
       <div className="orbit-floor" aria-hidden="true" />
-      <div className="orbit-ring" ref={ring} style={{ transform: `translate3d(0,0,${-r}px) rotateX(${TILT}deg)` }}>
-        {children.map((c, j) => { let rel = ((j - idx) % n + n) % n; if (rel > n / 2) rel -= n
-          const d = Math.abs(rel) /* 0 = top of the deck */
-          return <div className={`orbit-item ${j === idx ? 'on' : ''}`} key={j} data-j={j} style={{ transform: `rotateY(${j * th}deg) translate3d(0,0,${r}px)` }} aria-hidden={j !== idx}>
-            <div className="orbit-fall" style={{ ['--a' as string]: `${rel * th}deg`, ['--oy' as string]: `${-d * 9}px`, ['--oz' as string]: `${-d * 16}px`, ['--rz' as string]: `${(rel % 2 ? 1 : -1) * d * 1.8}deg` }}>
-              <div className="orbit-face">{c}</div>
-              <div className="orbit-back" aria-hidden="true"><Mark3 /></div>
-            </div></div> })}
+      <div className="orbit-rise">
+        <div className="orbit-ring" ref={ring} style={{ transform: `translate3d(0,0,${-r}px) rotateX(${TILT}deg)` }}>
+          {items}
+        </div>
       </div>
     </div>
     <div className="orbit-dots" aria-hidden="true">{children.map((_, j) => <i key={j} className={j === idx ? 'on' : ''} />)}</div>

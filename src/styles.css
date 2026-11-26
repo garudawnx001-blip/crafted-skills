@@ -935,12 +935,11 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .orbit-face{position:relative;border-radius:22px;transform:translateZ(1px)}
 .orbit-face>.bcard{box-shadow:0 2px 6px rgba(40,10,90,.06),0 30px 60px -36px rgba(50,1,130,.45)}
 .orbit-back{position:absolute;inset:0;border-radius:22px;transform:rotateY(180deg) translateZ(1px);display:grid;place-items:center;
-  background:radial-gradient(90% 70% at 50% 30%,#6d28d9,#320182 70%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 30px 60px -36px rgba(30,0,80,.6)}
-.orbit-back:before{content:"";position:absolute;inset:14px;border-radius:14px;border:1px solid rgba(255,255,255,.18)}
-.ob-logo{display:grid;justify-items:center;gap:10px;color:#fff;opacity:.9}.ob-logo img{width:72px;height:auto}.ob-logo b{font:400 20px var(--display);letter-spacing:.02em}
+  background:linear-gradient(160deg,#f6efff,#e4d3fd);box-shadow:inset 0 0 0 1px rgba(124,58,237,.14),0 24px 50px -36px rgba(50,1,130,.35)}
+.orbit-back:before{content:"";position:absolute;inset:14px;border-radius:14px;border:1px solid rgba(124,58,237,.14)}
+.ob-logo{display:grid;justify-items:center;gap:10px;color:var(--indigo);opacity:.35}.ob-logo img{width:72px;height:auto}.ob-logo b{font:400 20px var(--display);letter-spacing:.02em}
 /* light sweep across the card the moment it reaches the front */
 .orbit-face:after{content:"";position:absolute;inset:0;border-radius:22px;pointer-events:none;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.65) 50%,transparent 65%);transform:translate3d(-120%,0,0);opacity:0}
-.landed .orbit-item.on .orbit-face:after{animation:obSheen 1.3s cubic-bezier(.4,0,.2,1) .35s both}
 @keyframes obSheen{0%{opacity:1;transform:translate3d(-120%,0,0)}100%{opacity:1;transform:translate3d(120%,0,0)}}
 .orbit-face{overflow:hidden}
 /* spotlight from above + glowing floor */
@@ -948,23 +947,17 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .landed .orbit-spot{opacity:1}
 .orbit-floor{transition:transform 1.4s cubic-bezier(.16,1,.3,1),opacity 1.2s ease}
 .landed .orbit-floor{transform:none;opacity:1}
-/* scroll-driven flight: the deck leaves the hero's "My learning" card, flies down with the scroll,
-   lands as a neat stack, fans into an arc, then wraps into the 3D ring */
-.orbit-stage{--fx:0px;--fy:-600px;--fs:.55}
+/* scroll reveal in place: the ring rises from lying flat to standing, as the section scrolls in (GPU only) */
+.orbit-rise{position:absolute;inset:0;transform-style:preserve-3d;transform-origin:50% 45%;will-change:transform}
 @supports (animation-timeline:view()){
-  .orbit-fall{animation:obFly linear both;animation-timeline:--orb;animation-range:entry 0% cover 48%}
-  .orbit-face,.orbit-back{animation:obAppear linear both;animation-timeline:--orb;animation-range:entry 0% entry 22%}
+  .orbit-rise{animation:obRise linear both;animation-timeline:--orb;animation-range:entry 5% cover 42%}
+  .orbit-floor,.orbit-spot{animation:obGlow linear both;animation-timeline:--orb;animation-range:entry 30% cover 45%}
 }
-@keyframes obAppear{from{opacity:.002}to{opacity:1}}
-@keyframes obFly{
-  0%{transform:translateZ(calc(-1 * var(--r))) rotateY(calc(-1 * var(--a))) translateZ(var(--r)) translate3d(var(--fx),var(--fy),0) translate3d(0,calc(var(--oy) * .4),var(--oz)) rotateZ(calc(var(--rz) * .5)) scale(var(--fs))}
-  42%{transform:translateZ(calc(-1 * var(--r))) rotateY(calc(-1 * var(--a))) translateZ(var(--r)) translate3d(0,0,0) translate3d(0,var(--oy),var(--oz)) rotateZ(var(--rz)) scale(1)}
-  70%{transform:translateZ(calc(-1 * var(--r))) rotateY(calc(-.42 * var(--a))) translateZ(calc(var(--r) * 1.05)) translate3d(0,-22px,0) translate3d(0,0,0) rotateZ(calc(var(--rz) * -.4)) scale(1)}
-  100%{transform:translateZ(0) rotateY(0deg) translateZ(0) translate3d(0,0,0) translate3d(0,0,0) rotateZ(0deg) scale(1)}}
-@supports not (animation-timeline:view()){
-  .orbit-fall{transform:translateZ(calc(-1 * var(--r))) rotateY(calc(-1 * var(--a))) translateZ(var(--r)) translate3d(0,var(--oy),var(--oz)) rotateZ(var(--rz));transition:transform 1.5s cubic-bezier(.2,.85,.25,1)}
-  .landed .orbit-fall{transform:translateZ(0) rotateY(0deg) translateZ(0) translate3d(0,var(--oy),0) rotateZ(0deg);transform:none}
-}
+@keyframes obRise{from{transform:translate3d(0,90px,-260px) rotateX(62deg) scale(.82)}to{transform:none}}
+@keyframes obGlow{from{opacity:0}to{opacity:1}}
+.orbit-floor{opacity:1;transform:none}.orbit-spot{opacity:1}
+.orbit-item.on .orbit-face:after{animation:obSheen 1.3s cubic-bezier(.4,0,.2,1) .25s both}
+.orbit-ring{transition:none}
 .orbit-item .bcard:hover{transform:none}
 
 .tick-w{display:block;overflow:hidden;height:1.35em;margin-top:3px}.tick-w span{display:block;animation:tickIn .55s cubic-bezier(.16,1,.3,1) both}@keyframes tickIn{from{transform:translate3d(0,100%,0);opacity:0}}
