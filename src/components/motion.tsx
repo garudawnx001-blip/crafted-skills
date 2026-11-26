@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import React, { useEffect, useRef, useState, type ReactNode } from 'react'
 
 export const reduceMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion:reduce)').matches
 
@@ -97,7 +97,7 @@ export function Count({ to, prefix = '' }: { to: number; prefix?: string }) {
 }
 
 /* Native swipe rail: scroll-snap (smooth on every phone), arrows on PC, dots on phone. */
-export function Rail({ head, children, count }: { head: ReactNode; children: ReactNode; count: number }) {
+export function Rail({ head, children, count, stagger }: { head: ReactNode; children: ReactNode; count: number; stagger?: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
   const [idx, setIdx] = useState(0); const [edge, setEdge] = useState({ s: true, e: false })
   useEffect(() => {
@@ -117,7 +117,101 @@ export function Rail({ head, children, count }: { head: ReactNode; children: Rea
     <div className="head-row"><div>{head}</div>
       <div className="rail-ui"><button onClick={() => go(-1)} disabled={edge.s} aria-label="Previous"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg></button>
         <button onClick={() => go(1)} disabled={edge.e} aria-label="Next"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5l7 7-7 7" /></svg></button></div></div>
-    <div className="rail" ref={ref} tabIndex={0} onKeyDown={(e) => { if (e.key === 'ArrowRight') { e.preventDefault(); go(1) } if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1) } }}>{children}</div>
+    <div className={`rail ${stagger ? 'stg' : ''}`} ref={ref} tabIndex={0} onKeyDown={(e) => { if (e.key === 'ArrowRight') { e.preventDefault(); go(1) } if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1) } }}>{children}</div>
     <div className="dots" aria-hidden="true">{Array.from({ length: count }, (_, i) => <i key={i} className={i === idx ? 'on' : ''} />)}</div>
+  </div>
+}
+
+/* Section headings: each word slides up out of a mask. */
+export function SplitH({ text, as = 'h2', className = 'h2', style }: { text: string; as?: 'h1' | 'h2'; className?: string; style?: React.CSSProperties }) {
+  const T = as
+  return <T className={`${className} sh`} style={style} aria-label={text}>{text.split(' ').map((w, i, a) => <React.Fragment key={i}><span className="w" aria-hidden="true"><span style={{ ['--i' as string]: i }}>{w}</span></span>{i < a.length - 1 ? ' ' : ''}</React.Fragment>)}</T>
+}
+
+/* Hero scroll-out + page progress bar: one passive rAF listener, transforms only. */
+export function useHeroScroll() {
+  useEffect(() => {
+    if (reduceMotion()) return
+    const copy = document.querySelector<HTMLElement>('.hero-copy'), pic = document.querySelector<HTMLElement>('.pic'), bar = document.querySelector<HTMLElement>('.sprog')
+    let raf = 0
+    const run = () => { raf = 0
+      const vh = innerHeight, y = scrollY, k = Math.min(1, y / (vh * .85))
+      if (copy && k <= 1) { copy.style.transform = `translate3d(0,${(-k * 70).toFixed(1)}px,0)`; copy.style.opacity = (1 - k * 0.9).toFixed(3) }
+      if (pic && k <= 1) pic.style.transform = `translate3d(0,${(k * 50).toFixed(1)}px,0) scale(${(1 - k * .07).toFixed(4)})`
+      if (bar) { const h = document.documentElement.scrollHeight - vh; bar.style.transform = `scaleX(${h > 0 ? (y / h).toFixed(4) : 0})` }
+    }
+    const on = () => { if (!raf) raf = requestAnimationFrame(run) }
+    run(); addEventListener('scroll', on, { passive: true }); addEventListener('resize', on)
+    return () => { removeEventListener('scroll', on); removeEventListener('resize', on); cancelAnimationFrame(raf) }
+  }, [])
+}
+
+/* Closing banner grows to full size as it scrolls in. */
+export function GrowIn({ children }: { children: ReactNode }) {
+  const ref = useScroll<HTMLDivElement>((el, _p, pc) => { const k = ease(pc); const c = el.firstElementChild as HTMLElement; c.style.transform = `scale(${(0.86 + k * 0.14).toFixed(4)})`; c.style.borderRadius = `${(60 - k * 26).toFixed(1)}px` })
+  return <div ref={ref}>{children}</div>
+}
+
+/* Premium course showcase. The focus effect (scale, lift, fade) is a CSS scroll-driven animation,
+   so it runs on the compositor in step with the finger: no JS per frame, no lag on phones.
+   JS only tracks which card is centred (for the counter + shadow), drag with momentum on PC,
+   and a calm autoplay that pauses on hover and stops for good once the visitor takes over. */
+const CSS_SCROLL = typeof CSS !== 'undefined' && CSS.supports?.('animation-timeline: view()')
+export function Showcase({ head, children, count }: { head: ReactNode; children: ReactNode[]; count: number }) {
+  const track = useRef<HTMLDivElement>(null), bar = useRef<HTMLSpanElement>(null)
+  const [idx, setIdx] = useState(0)
+  const touched = useRef(false), hover = useRef(false)
+  const centreOf = (i: number) => { const t = track.current!, c = t.children[i] as HTMLElement; return c.offsetLeft + c.offsetWidth / 2 - t.clientWidth / 2 }
+  const nearest = () => { const t = track.current!; let b = 0, bd = 1e9; for (let i = 0; i < t.children.length; i++) { const d = Math.abs(centreOf(i) - t.scrollLeft); if (d < bd) { bd = d; b = i } } return b }
+  const snapTo = (i: number) => { const t = track.current; if (!t) return; i = Math.max(0, Math.min(count - 1, i)); t.scrollTo({ left: centreOf(i), behavior: reduceMotion() ? 'auto' : 'smooth' }) }
+  useEffect(() => {
+    const t = track.current; if (!t) return
+    const red = reduceMotion()
+    let raf = 0
+    const paint = () => { raf = 0
+      const n = nearest(); setIdx((p) => (p === n ? p : n))
+      if (!CSS_SCROLL) {
+        if (bar.current) { const max = t.scrollWidth - t.clientWidth; bar.current.style.transform = `scaleX(${max > 0 ? Math.max(.08, t.scrollLeft / max) : 1})` }
+        if (red) return
+        for (let i = 0; i < t.children.length; i++) {
+          const el = t.children[i] as HTMLElement, w = el.offsetWidth || 1
+          const f = Math.max(0, 1 - Math.abs(centreOf(i) - t.scrollLeft) / w * .7)
+          el.style.transform = `translate3d(0,${((1 - f) * 22).toFixed(1)}px,0) scale(${(.88 + f * .12).toFixed(4)})`
+          el.style.opacity = (.5 + f * .5).toFixed(3)
+        }
+      }
+    }
+    const on = () => { if (!raf) raf = requestAnimationFrame(paint) }
+    paint(); t.addEventListener('scroll', on, { passive: true }); addEventListener('resize', on)
+    // mouse drag with momentum: release direction + speed decides the next card
+    let down = false, sx = 0, sl = 0, moved = 0, lx = 0, lt = 0, v = 0, start = 0
+    const pd = (e: PointerEvent) => { touched.current = true; if (e.pointerType !== 'mouse' || e.button) return
+      down = true; moved = 0; sx = lx = e.clientX; lt = performance.now(); v = 0; sl = t.scrollLeft; start = nearest(); t.classList.add('dragging') }
+    const pm = (e: PointerEvent) => { if (!down) return; const now = performance.now(), dx = e.clientX - sx
+      moved = Math.max(moved, Math.abs(dx)); t.scrollLeft = sl - dx
+      const dt = now - lt; if (dt > 0) v = .8 * ((e.clientX - lx) / dt) + .2 * v; lx = e.clientX; lt = now }
+    const pu = () => { if (!down) return; down = false; t.classList.remove('dragging')
+      let n = nearest(); if (Math.abs(v) > .35 && n === start) n = start + (v < 0 ? 1 : -1); snapTo(n) }
+    const click = (e: MouseEvent) => { if (moved > 6) { e.preventDefault(); e.stopPropagation(); moved = 0; return }
+      const card = (e.target as HTMLElement).closest('.sc-item'); if (!card) return
+      const i = [...t.children].indexOf(card); if (i !== nearest()) { e.preventDefault(); e.stopPropagation(); touched.current = true; snapTo(i) } }
+    const he = () => { hover.current = true }, hl = () => { hover.current = false }
+    t.addEventListener('pointerdown', pd); addEventListener('pointermove', pm); addEventListener('pointerup', pu); t.addEventListener('click', click, true)
+    t.addEventListener('mouseenter', he); t.addEventListener('mouseleave', hl); t.addEventListener('wheel', () => { touched.current = true }, { passive: true })
+    let vis = false; const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting }, { threshold: .6 }); io.observe(t)
+    const auto = setInterval(() => { if (vis && !touched.current && !hover.current && !red && !document.hidden) { const n = nearest(); snapTo(n + 1 >= count ? 0 : n + 1) } }, 5200)
+    return () => { cancelAnimationFrame(raf); t.removeEventListener('scroll', on); removeEventListener('resize', on); t.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); t.removeEventListener('click', click, true); t.removeEventListener('mouseenter', he); t.removeEventListener('mouseleave', hl); io.disconnect(); clearInterval(auto) }
+  }, [count])
+  const go = (d: number) => { touched.current = true; snapTo(nearest() + d) }
+  const arrow = (d: string) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
+  return <div className={`showcase ${CSS_SCROLL ? 'css-sd' : ''}`}>
+    <div className="head-row"><div>{head}</div>
+      <div className="sc-ui"><span className="sc-count" aria-live="polite"><b key={idx}>{String(idx + 1).padStart(2, '0')}</b> / {String(count).padStart(2, '0')}</span>
+        <div className="rail-ui"><button onClick={() => go(-1)} disabled={idx === 0} aria-label="Previous bundle">{arrow('M15 5l-7 7 7 7')}</button>
+          <button onClick={() => go(1)} disabled={idx === count - 1} aria-label="Next bundle">{arrow('M9 5l7 7-7 7')}</button></div></div></div>
+    <div className="sc-track" ref={track} tabIndex={0} aria-label="Course bundles" onKeyDown={(e) => { if (e.key === 'ArrowRight') { e.preventDefault(); go(1) } if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1) } }}>
+      {children.map((c, i) => <div className={`sc-item ${i === idx ? 'on' : ''}`} key={i}>{c}</div>)}
+    </div>
+    <div className="sc-prog" aria-hidden="true"><span ref={bar} /></div>
   </div>
 }

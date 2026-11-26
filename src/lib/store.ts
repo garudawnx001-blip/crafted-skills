@@ -4,7 +4,7 @@
 import { useSyncExternalStore } from 'react'
 import { bundleBySlug, type Bundle } from '../data/site'
 
-export type Role = 'learner' | 'affiliate' | 'seller' | 'admin'
+export type Role = 'learner' | 'affiliate' | 'admin'
 export type User = {
   id: string; name: string; email: string; phone: string; roles: Role[]
   refCode: string; referredBy?: string; createdAt: number
@@ -117,11 +117,11 @@ export function getStoredRef(): string | undefined {
 
 // Orders (test-mode payments)
 export function ownsBundle(slug: string, u = currentUser()) { return !!u && db.orders.some((o) => o.userId === u.id && o.bundle === slug && o.status === 'paid') }
-// A product is either a Crafted Skills bundle or a published trainer course
+// A product is either a Crafted Skills bundle or a course the founders published from admin
 export function getProduct(slug: string): (Bundle & { seller?: string }) | undefined {
   const b = bundleBySlug(slug); if (b) return b
   const c = db.courses.find((x) => 'c-' + x.id === slug && x.status === 'published')
-  return c ? { slug, name: c.title, price: c.price, image: 'img/hero-collage.webp', tint: '#cbb8ff', courses: c.lessons.map((l) => ({ name: l.title, status: 'Available now' as const })), seller: c.sellerName } : undefined
+  return c ? { slug, name: c.title, price: c.price, image: 'img/hero-collage.webp', tint: '#cbb8ff', courses: c.lessons.map((l) => ({ name: l.title, status: 'Available now' as const })) } : undefined
 }
 export function placeOrder(slug: string, method: string): Order {
   const u = currentUser(); const b = getProduct(slug)
@@ -148,13 +148,14 @@ export function leaderboard() {
   }).sort((a, b) => b.value - a.value || b.sales - a.sales).slice(0, 10)
 }
 
-// Trainer (seller) courses
+// Courses the founders add from the admin panel
 export function saveCourse(c: Omit<SellerCourse, 'id' | 'sellerId' | 'sellerName' | 'createdAt'> & { id?: string }) {
   const u = currentUser(); if (!u) throw new Error('Please log in again.')
-  if (c.id) { const x = db.courses.find((y) => y.id === c.id && y.sellerId === u.id); if (x) Object.assign(x, c) }
-  else db.courses.push({ ...c, id: rid('c'), sellerId: u.id, sellerName: u.name, createdAt: Date.now() })
+  if (!u.roles.includes('admin')) throw new Error('Only Crafted Skills admins can add courses.')
+  if (c.id) { const x = db.courses.find((y) => y.id === c.id); if (x) Object.assign(x, c) }
+  else db.courses.push({ ...c, id: rid('c'), sellerId: u.id, sellerName: 'Crafted Skills', createdAt: Date.now() })
   commit()
 }
 export function setCourseStatus(id: string, status: SellerCourse['status']) { const x = db.courses.find((y) => y.id === id); if (x) { x.status = status; commit() } }
-export function deleteCourse(id: string) { const u = currentUser(); db.courses = db.courses.filter((c) => !(c.id === id && c.sellerId === u?.id)); commit() }
+export function deleteCourse(id: string) { const u = currentUser(); if (!u?.roles.includes('admin')) return; db.courses = db.courses.filter((c) => c.id !== id); commit() }
 export function resolveRefund(id: string, approve: boolean) { const o = db.orders.find((x) => x.id === id); if (o) { o.status = approve ? 'refunded' as Order['status'] : 'paid'; commit() } }

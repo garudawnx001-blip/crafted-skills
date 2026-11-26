@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ABOUT, AFFILIATE, ALL_SKILLS, BUNDLES, FAQ, FOUNDERS, HOME, SITE, TESTIMONIALS, WHO, WHY } from '../data/site'
-import { Count, Parallax, Rail, ScrollWords, Steps, TiltIn } from '../components/motion'
+import { Count, GrowIn, Parallax, Rail, Showcase, ScrollWords, SplitH, Steps, TiltIn, useHeroScroll } from '../components/motion'
 import { BundleCard, Icon, Mark, Seo } from '../components/ui'
 
 const d = (ms: number) => ({ ['--d' as string]: ms + 'ms' })
@@ -10,7 +10,7 @@ function Hero() {
   const [a, b] = HOME.heroTitle.split(' in Kannada ')
   return <section className="hero">
     <div className="wrap hero-grid">
-      <div>
+      <div className="hero-copy">
         <span className="kchip kn he" style={d(0)} lang="kn"><i />{SITE.kannadaLine}</span>
         <h1 className="h1 he" style={d(80)}>{a} <em>in Kannada</em> {b}</h1>
         <p className="lead he" style={d(180)}>{HOME.heroIntro}</p>
@@ -70,7 +70,7 @@ function Testimonials() {
   const [open, setOpen] = useState<number | null>(null)
   const t = open == null ? null : TESTIMONIALS[open]
   return <>
-    <Rail count={TESTIMONIALS.length} head={<><span className="eyebrow">Student stories</span><h2 className="h2" style={{ marginTop: 10 }}>Feedback From Our Students</h2><p className="lead">Real words from real learners — tap a story to read it in full.</p></>}>
+    <Rail stagger count={TESTIMONIALS.length} head={<><span className="eyebrow">Student stories</span><SplitH text="Feedback From Our Students" style={{ marginTop: 10 }} /><p className="lead">Real words from real learners — tap a story to read it in full.</p></>}>
       {TESTIMONIALS.map((x, i) => <button key={x.name} className="card tcard" onClick={() => setOpen(i)} aria-label={`Read ${x.name}'s story`}>
         <div className="who"><img src={x.photo} alt="" loading="lazy" width="58" height="58" /><div><b>{x.name}</b><small>Crafted Skills student</small></div></div>
         <div className="qm" aria-hidden="true">“</div>
@@ -97,17 +97,19 @@ export function Faq() {
 const whoIcon: Record<string, string> = { home: 'home', cap: 'cap', case: 'case', idea: 'idea' }
 
 export default function Home() {
+  useHeroScroll()
   return <>
+    <div className="sprog" aria-hidden="true" />
     <Seo title="Crafted Skills (CraftedSkills) | Learn Digital Skills in Kannada" desc="Crafted Skills – learn practical digital skills in Kannada and build your dreams from home. Course bundles, affiliate program and student dashboard. Karnataka." />
     <Hero />
     <Marquee />
 
     <section className="sec tint">
       <div className="wrap">
-        <Rail count={BUNDLES.length} head={<><span className="eyebrow">Course bundles</span><h2 className="h2" style={{ marginTop: 10 }}>Explore Our Course Bundles</h2><p className="lead">Learn practical digital skills in Kannada and take the next step toward your goals.</p></>}>
-          {BUNDLES.map((b, i) => <BundleCard key={b.slug} b={b} eager={i < 2} />)}
-        </Rail>
-        <p style={{ marginTop: 18 }}><Link to="/courses" className="link">Compare all {BUNDLES.length} bundles</Link></p>
+        <Showcase count={BUNDLES.length} head={<><span className="eyebrow">Course bundles</span><SplitH text="Explore Our Course Bundles" style={{ marginTop: 10 }} /><p className="lead">Learn practical digital skills in Kannada and take the next step toward your goals.</p></>}>
+          {BUNDLES.map((b, i) => <BundleCard key={b.slug} b={b} eager={i < 3} />)}
+        </Showcase>
+        <p className="center" style={{ marginTop: 22 }}><Link to="/courses" className="btn btn-g">Compare all {BUNDLES.length} bundles</Link></p>
       </div>
     </section>
 
@@ -115,9 +117,9 @@ export default function Home() {
       <div className="wrap split">
         <div className="rv">
           <span className="eyebrow">The platform</span>
-          <h2 className="h2" style={{ margin: '12px 0 16px' }}>{HOME.introTitle}</h2>
+          <SplitH text={HOME.introTitle} style={{ margin: '12px 0 16px' }} />
           <p className="lead">{HOME.introText}</p>
-          <div className="tiles"><div><Icon n="book" />Your own learning dashboard</div><div><Icon n="rupee" />Affiliate dashboard</div><div><Icon n="award" />Certificates</div></div>
+          <div className="tiles stg"><div><Icon n="book" />Your own learning dashboard</div><div><Icon n="rupee" />Affiliate dashboard</div><div><Icon n="award" />Certificates</div></div>
           <div className="ctas"><Link to="/signup" className="btn btn-p">Create free account</Link><Link to="/about" className="btn btn-g">About Crafted Skills</Link></div>
         </div>
         <PlatformPreview />
@@ -126,7 +128,7 @@ export default function Home() {
 
     <section className="sec tint">
       <div className="wrap">
-        <div className="head center rv"><span className="eyebrow">How it works</span><h2 className="h2">3 steps to get started</h2></div>
+        <div className="head center rv"><span className="eyebrow">How it works</span><SplitH text="3 steps to get started" /></div>
         <Steps>
           <div className="card step"><span className="no">01</span><div className="ic"><Icon n="user" /></div><h3>Create your account</h3><p>Sign up in a minute and choose the course bundle that fits your goal.</p></div>
           <div className="card step hot"><span className="no">02</span><div className="ic"><Icon n="play" /></div><h3>Learn in Kannada</h3><p>{WHY[2].d} Learn at your own pace from your dashboard.</p></div>
@@ -137,21 +139,21 @@ export default function Home() {
 
     <section className="sec">
       <div className="wrap">
-        <div className="head center rv"><span className="eyebrow">For everyone</span><h2 className="h2">Who Can Join Our Courses</h2></div>
-        <div className="g4">{WHO.map((w) => <div key={w.t} className="card who-card rv"><div className="ic"><Icon n={whoIcon[w.icon]} /></div><h3>{w.t}</h3><p>{w.d}</p></div>)}</div>
+        <div className="head center rv"><span className="eyebrow">For everyone</span><SplitH text="Who Can Join Our Courses" /></div>
+        <div className="g4 stg">{WHO.map((w) => <div key={w.t} className="card who-card"><div className="ic"><Icon n={whoIcon[w.icon]} /></div><h3>{w.t}</h3><p>{w.d}</p></div>)}</div>
         <div className="head center rv" style={{ marginTop: 'clamp(48px,6vw,80px)' }}><span className="eyebrow">Why Crafted Skills?</span></div>
-        <div className="g4">{WHY.map((w) => <div key={w.t} className="rv why-item"><b><Icon n="check" s={18} />{w.t}</b><p>{w.d}</p></div>)}</div>
+        <div className="g4 stg">{WHY.map((w) => <div key={w.t} className="why-item"><b><Icon n="check" s={18} />{w.t}</b><p>{w.d}</p></div>)}</div>
       </div>
     </section>
 
     <section className="sec tint">
       <div className="wrap split">
-        <div className="photo rv" style={{ aspectRatio: '3/2' }}><img src="img/hero-collage.webp" alt="Women learning digital skills from home" loading="lazy" width="1200" height="800" /></div>
+        <div className="photo wipe" style={{ aspectRatio: '3/2' }}><img src="img/hero-collage.webp" alt="Women learning digital skills from home" loading="lazy" width="1200" height="800" /></div>
         <div className="rv">
           <span className="eyebrow">About us</span>
-          <h2 className="h2" style={{ margin: '12px 0 16px' }}>{HOME.aboutTitle.replace(' :', '')}</h2>
+          <SplitH text={HOME.aboutTitle.replace(' :', '')} style={{ margin: '12px 0 16px' }} />
           {HOME.aboutLines.map((l) => <p key={l} className="lead" style={{ marginBottom: 10 }}>{l}</p>)}
-          <div className="tiles"><div><Icon n="lang" />{HOME.aboutTiles[0]}</div><div><Icon n="bulb" />{HOME.aboutTiles[1]}</div><div><Icon n="sprout" />{HOME.aboutTiles[2]}</div></div>
+          <div className="tiles stg"><div><Icon n="lang" />{HOME.aboutTiles[0]}</div><div><Icon n="bulb" />{HOME.aboutTiles[1]}</div><div><Icon n="sprout" />{HOME.aboutTiles[2]}</div></div>
           <div className="ctas"><Link to="/courses" className="btn btn-p">Explore Our Courses</Link></div>
         </div>
       </div>
@@ -159,8 +161,8 @@ export default function Home() {
 
     <section className="sec">
       <div className="wrap">
-        <div className="head center rv"><span className="eyebrow">The people behind Crafted Skills</span><h2 className="h2">Meet Our Founders</h2><p className="lead">A shared mission to make digital skills accessible to everyone, in Kannada.</p></div>
-        <div className="founders">{FOUNDERS.map((f) => <Parallax key={f.name} className="card fnd rv">
+        <div className="head center rv"><span className="eyebrow">The people behind Crafted Skills</span><SplitH text="Meet Our Founders" /><p className="lead">A shared mission to make digital skills accessible to everyone, in Kannada.</p></div>
+        <div className="founders stg">{FOUNDERS.map((f) => <Parallax key={f.name} className="card fnd">
           <div className="ph para"><img src={f.photo} alt={`${f.name}, ${f.role} of Crafted Skills`} loading="lazy" width="720" height="1292" /></div>
           <div><span className="role">{f.role}</span><h3>{f.name}</h3><div className="pl">{f.place}</div>
             {(f.name === 'Rachana' ? [0, 1, 3] : [0, 3]).map((k) => <p key={k} style={{ marginTop: k ? 10 : 0 }}>{f.bio[k]}</p>)}
@@ -181,7 +183,7 @@ export default function Home() {
       <div className="wrap g2" style={{ alignItems: 'center' }}>
         <div className="rv">
           <span className="eyebrow">Affiliate program</span>
-          <h2 className="h2" style={{ margin: '12px 0 16px' }}>Share, track and earn from your own dashboard</h2>
+          <SplitH text="Share, track and earn from your own dashboard" style={{ margin: '12px 0 16px' }} />
           <p className="lead">{AFFILIATE.line} Every click, sign-up and sale from your link shows up in your dashboard, and payouts go to your UPI or bank account.</p>
           <div className="ctas"><Link to="/signup?role=affiliate" className="btn btn-p">Become an Affiliate</Link><Link to="/affiliate" className="btn btn-g">How it works</Link></div>
         </div>
@@ -195,19 +197,19 @@ export default function Home() {
 
     <section className="sec">
       <div className="wrap">
-        <div className="head center rv"><span className="eyebrow">FAQ</span><h2 className="h2">Questions, answered</h2></div>
+        <div className="head center rv"><span className="eyebrow">FAQ</span><SplitH text="Questions, answered" /></div>
         <Faq />
       </div>
     </section>
 
-    <section className="wrap">
-      <div className="cta rv">
+    <section className="wrap"><GrowIn>
+      <div className="cta">
         <Mark className="bm cta-mark" />
-        <h2 className="h2" style={{ marginTop: 18 }}>{HOME.closingTitle}</h2>
+        <SplitH text={HOME.closingTitle} style={{ marginTop: 18 }} />
         <p className="lead" style={{ maxWidth: '34em', margin: '16px auto 0' }}>{HOME.closingText}</p>
         <div className="ctas"><Link to="/courses" className="btn btn-w">Explore Our Courses</Link><Link to="/signup" className="btn btn-o">Create free account</Link></div>
         <div className="trust"><span>Learn in Kannada</span><span>24-hour refund policy</span><span>Secure checkout</span></div>
       </div>
-    </section>
+    </GrowIn></section>
   </>
 }

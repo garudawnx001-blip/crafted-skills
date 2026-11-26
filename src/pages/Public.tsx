@@ -3,12 +3,13 @@ import { Link, useParams } from 'react-router-dom'
 import { ABOUT, AFFILIATE, BUNDLES, CONTACT, FOUNDERS, HOME, SITE, TERMS, inr } from '../data/site'
 import { BundleCard, FbIcon, Icon, IgIcon, Seo, WaIcon, waLink } from '../components/ui'
 import { useMemo } from 'react'
+import { SplitH } from '../components/motion'
 import { getProduct, ownsBundle, saveMessage, useStore } from '../lib/store'
 import { Faq } from './Home'
 
 export function PageHero({ eyebrow, title, lead, children, crumbs }: { eyebrow?: string; title: ReactNode; lead?: ReactNode; children?: ReactNode; crumbs?: ReactNode }) {
   return <section className="phero">
-    <div className="wrap">{crumbs && <div className="crumbs">{crumbs}</div>}{eyebrow && <span className="eyebrow">{eyebrow}</span>}<h1 className="h1" style={{ marginTop: 14 }}>{title}</h1>{lead && <p className="lead">{lead}</p>}{children}</div>
+    <div className="wrap">{crumbs && <div className="crumbs">{crumbs}</div>}{eyebrow && <span className="eyebrow">{eyebrow}</span>}{typeof title === 'string' ? <SplitH as="h1" className="h1" text={title} style={{ marginTop: 14 }} /> : <h1 className="h1" style={{ marginTop: 14 }}>{title}</h1>}{lead && <p className="lead">{lead}</p>}{children}</div>
   </section>
 }
 
@@ -58,7 +59,7 @@ export function Courses() {
         <label className="search"><Icon n="search" s={19} /><input className="input" placeholder="Search a skill, e.g. Graphic Designing" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search courses" /></label>
         <div className="pills" role="group" aria-label="Filter">{([['all', 'All bundles'], ['live', 'Available now'], ['u5', 'Up to ₹5,999'], ['p5', 'Above ₹5,999']] as const).map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}</div>
       </div>
-      {list.length ? <div className="bgrid">{list.map((b) => <BundleCard key={b.slug} b={b} />)}</div>
+      {list.length ? <div className="bgrid stg" key={q + f}>{list.map((b) => <BundleCard key={b.slug} b={b} />)}</div>
         : <div className="panel"><div className="empty"><div className="ei"><Icon n="search" /></div><h3>No bundle matches “{q}”</h3><p>Try another skill, or ask us on WhatsApp which bundle fits you.</p></div></div>}
     </div></section>
     <section className="wrap"><div className="cta rv"><h2 className="h2">Not sure which bundle fits you?</h2><p className="lead" style={{ margin: '14px auto 0', maxWidth: '32em' }}>{CONTACT.text}</p>
@@ -78,7 +79,7 @@ export function BundleDetail() {
     <Seo title={`${b.name} – ${inr(b.price)} | Crafted Skills`} desc={`${b.name}: ${b.courses.map((c) => c.name).join(', ')}. Learn in Kannada with Crafted Skills.`} />
     <section className="dhero"><div className="wrap dgrid"><div>
       <div className="crumbs"><Link to="/">Home</Link> / <Link to="/courses">Courses</Link> / {b.name}</div>
-      <span className="eyebrow">{b.seller ? `By ${b.seller}` : 'Course bundle'}</span>
+      <span className="eyebrow">{b.slug.startsWith('c-') ? 'Course' : 'Course bundle'}</span>
       <h1 className="h1">{b.name}</h1>
       <p className="lead">Learn practical digital skills in Kannada and take the next step toward your goals.</p>
       <div className="meta"><span><Icon n="book" s={18} />{b.courses.length} courses</span><span><Icon n="check" s={18} />{live ? `${live} available now` : 'Launching soon'}</span><span><Icon n="lang" s={18} />Kannada</span><span><Icon n="user" s={18} />By Vaishnavi &amp; Rachana</span></div>
@@ -128,7 +129,7 @@ export function Affiliate() {
       </div>
     </div></section>
     <section className="sec tight"><div className="wrap"><div className="head center rv"><span className="eyebrow">Bundles you can recommend</span><h2 className="h2">7 bundles, one link each</h2></div>
-      <div className="bgrid">{BUNDLES.map((b) => <div key={b.slug} className="rv"><BundleCard b={b} /></div>)}</div></div></section>
+      <div className="bgrid stg">{BUNDLES.map((b) => <div key={b.slug} className="rv"><BundleCard b={b} /></div>)}</div></div></section>
   </>
 }
 

@@ -578,3 +578,51 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .arch img{mix-blend-mode:multiply}
 .pic:before{content:"";position:absolute;inset:-18px;border-radius:999px 999px 46px 46px;border:1.5px solid var(--lav2);z-index:-1}
 @media (max-width:640px){.pic:before{border-radius:38px;inset:-8px}}
+
+/* ---- scroll motion ---- */
+.sprog{position:fixed;left:0;right:0;top:0;height:3px;z-index:60;background:linear-gradient(90deg,var(--indigo),var(--vio2));transform-origin:0 50%;transform:scaleX(0);pointer-events:none}
+.hero-copy,.pic{will-change:transform}
+.sh .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.1em;margin-bottom:-.1em}
+.sh .w>span{display:inline-block;transform:translate3d(0,108%,0) rotate(4deg);transform-origin:0 100%;transition:transform 1.05s cubic-bezier(.16,1,.3,1) calc(var(--i)*55ms)}
+.sh.in .w>span{transform:none}
+.stg>*{opacity:0;transform:translate3d(0,48px,0) scale(.96);transition:opacity .9s cubic-bezier(.16,1,.3,1) calc(var(--i,0)*110ms),transform 1s cubic-bezier(.16,1,.3,1) calc(var(--i,0)*110ms)}
+.stg.in>*{opacity:1;transform:none}
+.rail.stg>*{transform:translate3d(60px,0,0)}
+.rail.stg.in>*{transform:none}
+.wipe{clip-path:inset(18% 8% 18% 8% round 28px);transition:clip-path 1.3s cubic-bezier(.7,0,.2,1)}
+.wipe img{transform:scale(1.25);transition:transform 1.8s cubic-bezier(.16,1,.3,1)}
+.wipe.in{clip-path:inset(0 0 0 0 round 28px)}
+.wipe.in img{transform:none}
+.eyebrow.rv{transform:translate3d(-16px,0,0)}
+@media (prefers-reduced-motion:reduce){.sh .w>span,.stg>*,.wipe,.wipe img{transform:none!important;opacity:1!important;clip-path:none!important}}
+
+.page{animation:pageIn .55s cubic-bezier(.16,1,.3,1) both}
+@keyframes pageIn{from{opacity:0}}
+.opening-on .page{animation:none}
+/* premium course showcase */
+.showcase{position:relative;timeline-scope:--sc}
+.sc-ui{display:flex;align-items:center;gap:18px;flex:none}
+.sc-count{font:500 15px var(--sans);color:var(--dim);letter-spacing:.06em;white-space:nowrap;overflow:hidden}
+.sc-count b{display:inline-block;font:400 30px var(--display);color:var(--indigo);letter-spacing:0;margin-right:2px;animation:scNum .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes scNum{from{transform:translateY(60%);opacity:0}}
+.sc-track{--cw:min(400px,78vw);display:flex;gap:clamp(10px,2vw,24px);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;
+  scroll-timeline:--sc inline;padding:20px calc(50% - var(--cw)/2) 44px;margin:0 calc(var(--pad)*-1);cursor:grab;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.sc-track::-webkit-scrollbar{display:none}
+.sc-track:focus-visible{outline:none}
+.sc-track.dragging{cursor:grabbing;scroll-snap-type:none;scroll-behavior:auto}
+.sc-item{flex:0 0 var(--cw);scroll-snap-align:center;scroll-snap-stop:always;min-width:0;transform-origin:50% 70%;position:relative;backface-visibility:hidden}
+.sc-item img{-webkit-user-drag:none}
+.sc-item .bcard{position:relative;box-shadow:0 1px 2px rgba(40,10,90,.05),0 14px 30px -22px rgba(50,1,130,.25)}
+.sc-item .bcard:after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:0 2px 6px rgba(40,10,90,.06),0 48px 90px -42px rgba(50,1,130,.55);opacity:0;transition:opacity .7s cubic-bezier(.2,.8,.2,1)}
+.sc-item.on .bcard:after{opacity:1}
+.sc-item .bcard:hover{transform:none}
+.sc-prog{height:3px;border-radius:3px;background:var(--lav2);max-width:420px;margin:4px auto 0;overflow:hidden}
+.sc-prog span{display:block;height:100%;background:linear-gradient(90deg,var(--indigo),var(--vio2));transform-origin:0 50%;transform:scaleX(.08);border-radius:3px;will-change:transform}
+@supports (animation-timeline:view()){
+  .css-sd .sc-item{animation:scFocus linear both;animation-timeline:view(inline);animation-range:cover 0% cover 100%}
+  .css-sd .sc-prog span{animation:scBar linear both;animation-timeline:--sc}
+}
+@keyframes scFocus{0%,22%{transform:translate3d(0,24px,0) scale(.87);opacity:.45}50%{transform:translate3d(0,0,0) scale(1);opacity:1}78%,100%{transform:translate3d(0,24px,0) scale(.87);opacity:.45}}
+@keyframes scBar{from{transform:scaleX(.08)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.css-sd .sc-item,.css-sd .sc-prog span{animation:none}}
+@media (max-width:640px){.sc-ui .rail-ui{display:none}.head-row .sc-ui{margin-top:16px}.sc-track{--cw:80vw;padding-top:12px;padding-bottom:32px}.sc-prog{max-width:180px}}

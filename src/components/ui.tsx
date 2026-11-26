@@ -50,15 +50,22 @@ export function Brand({ id }: { id?: string }) {
   return <Link to="/" className="brand" id={id} aria-label="Crafted Skills home"><Mark /><b>Crafted <span>Skills</span></b></Link>
 }
 
+const REVEAL = '.rv:not(.in),.stg:not(.in),.sh:not(.in),.wipe:not(.in)'
 export function useReveal() {
-  const loc = useLocation()
   useEffect(() => {
-    const els = document.querySelectorAll<HTMLElement>('.rv:not(.in)')
-    if (!('IntersectionObserver' in window)) { els.forEach((e) => e.classList.add('in')); return }
-    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } }), { rootMargin: '0px 0px -8% 0px', threshold: 0.05 })
-    els.forEach((e) => io.observe(e))
-    return () => io.disconnect()
-  }, [loc.pathname])
+    if (!('IntersectionObserver' in window)) { const t = setInterval(() => document.querySelectorAll(REVEAL).forEach((e) => e.classList.add('in')), 300); return () => clearInterval(t) }
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } }), { rootMargin: '0px 0px -12% 0px', threshold: 0.01 })
+    const seen = new WeakSet<Element>()
+    const scan = () => document.querySelectorAll<HTMLElement>(REVEAL).forEach((el) => {
+      if (seen.has(el)) return; seen.add(el)
+      if (el.classList.contains('stg')) [...el.children].forEach((c, i) => (c as HTMLElement).style.setProperty('--i', String(Math.min(i, 8))))
+      io.observe(el)
+    })
+    scan()
+    let q = 0; const mo = new MutationObserver(() => { if (!q) q = requestAnimationFrame(() => { q = 0; scan() }) })
+    mo.observe(document.body, { childList: true, subtree: true })
+    return () => { io.disconnect(); mo.disconnect(); cancelAnimationFrame(q) }
+  }, [])
 }
 
 const NAV = [['/courses', 'Courses'], ['/affiliate', 'Affiliate'], ['/about', 'About us'], ['/contact', 'Contact us']] as const

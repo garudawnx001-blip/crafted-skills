@@ -4,12 +4,11 @@ import { SITE, TESTIMONIALS } from '../data/site'
 import { Brand, Icon, Mark, PasswordInput, Seo } from '../components/ui'
 import { emailExists, logIn, resetPassword, signUp, type Role, type User } from '../lib/store'
 
-const ROLES: { r: Exclude<Role, 'admin'>; t: string; s: string }[] = [
+const ROLES: { r: 'learner' | 'affiliate'; t: string; s: string }[] = [
   { r: 'learner', t: 'Learner', s: 'Buy & learn' },
   { r: 'affiliate', t: 'Affiliate', s: 'Share & earn' },
-  { r: 'seller', t: 'Trainer', s: 'Sell courses' },
 ]
-export const homeFor = (u: User) => u.roles.includes('admin') ? '/admin' : u.roles.includes('seller') ? '/studio' : u.roles.includes('affiliate') ? '/partner' : '/dashboard'
+export const homeFor = (u: User) => u.roles.includes('admin') ? '/admin' : u.roles.includes('affiliate') ? '/partner' : '/dashboard'
 const okEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim())
 
 function Art() {
@@ -45,7 +44,7 @@ export function Login() {
     <Seo title="Log in | Crafted Skills" />
     <Art />
     <div className="auth-box"><form className="auth-card form" onSubmit={submit} noValidate>
-      <div className="auth-mbrand"><Brand /></div><h1>Welcome back</h1><p className="muted">Log in to your learner, affiliate or trainer dashboard.</p>
+      <div className="auth-mbrand"><Brand /></div><h1>Welcome back</h1><p className="muted">Log in to your learner or affiliate dashboard. Founders use the Crafted Skills admin email.</p>
       <div style={{ height: 10 }} />
       {err && <div className="alert bad" role="alert">{err}</div>}
       <div className="field"><label htmlFor="le">Email</label><input id="le" className="input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></div>
@@ -79,7 +78,7 @@ export function Signup() {
     try { const u = await signUp({ name: f.name, email: f.email, phone: '+91' + f.phone.replace(/\D/g, '').slice(-10), password: f.pw, role }); nav(q.get('next') || homeFor(u) + '?welcome=1', { replace: true }) }
     catch (y) { setErr((y as Error).message) } finally { setBusy(false) }
   }
-  const head = { learner: ['Start learning in Kannada', 'Create your free account. Buy a bundle when you are ready.'], affiliate: ['Join the affiliate program', 'Recommend Crafted Skills and earn exciting commissions for every successful signup!'], seller: ['Teach with Crafted Skills', 'Create your trainer account, add your course and send it to Crafted Skills for review.'] }[role]
+  const head = { learner: ['Start learning in Kannada', 'Create your free account. Buy a bundle when you are ready.'], affiliate: ['Join the affiliate program', 'Recommend Crafted Skills and earn exciting commissions for every successful signup!'] }[role]
   return <div className="auth">
     <Seo title="Sign up | Crafted Skills" />
     <Art />

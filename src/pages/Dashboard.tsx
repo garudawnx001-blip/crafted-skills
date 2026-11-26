@@ -21,11 +21,9 @@ function navFor(u: User): { title: string; items: Item[] }[] {
   if (u.roles.includes('affiliate')) g.push({ title: 'Affiliate', items: [
     { to: '/partner', label: 'Earnings', icon: 'rupee', end: true }, { to: '/partner/links', label: 'My links', icon: 'link' },
     { to: '/partner/referrals', label: 'Referrals', icon: 'users' }, { to: '/partner/leaderboard', label: 'Leaderboard', icon: 'trophy' }, { to: '/partner/payouts', label: 'Payouts', icon: 'wallet' }] })
-  if (u.roles.includes('seller')) g.push({ title: 'Trainer studio', items: [
-    { to: '/studio', label: 'Studio overview', icon: 'grid', end: true }, { to: '/studio/courses', label: 'My courses', icon: 'play' }, { to: '/studio/new', label: 'Add a course', icon: 'idea' }] })
   if (u.roles.includes('admin')) g.push({ title: 'Admin', items: [
     { to: '/admin', label: 'Business', icon: 'grid', end: true }, { to: '/admin/orders', label: 'Orders & refunds', icon: 'receipt' },
-    { to: '/admin/people', label: 'Students & affiliates', icon: 'users' }, { to: '/admin/review', label: 'Course review', icon: 'check' }, { to: '/admin/messages', label: 'Messages', icon: 'mail' }] })
+    { to: '/admin/people', label: 'Students & affiliates', icon: 'users' }, { to: '/admin/courses', label: 'Courses', icon: 'play' }, { to: '/admin/courses/new', label: 'Add a course', icon: 'idea' }, { to: '/admin/messages', label: 'Messages', icon: 'mail' }] })
   g.push({ title: 'Account', items: [{ to: '/dashboard/profile', label: 'Profile & security', icon: 'cog' }] })
   return g
 }
@@ -203,7 +201,7 @@ function Profile({ u }: { u: User }) {
         <button className="btn btn-g">Update password</button>
         <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, marginTop: 6 }}><h2 style={{ marginBottom: 6 }}>Roles</h2><p className="muted" style={{ marginBottom: 12 }}>One account for learning, earning and teaching.</p>
           <div className="chips">{u.roles.map((r) => <span className="chip live" key={r}>{r}</span>)}</div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>{!u.roles.includes('affiliate') && <button type="button" className="btn btn-g btn-sm" onClick={() => { addRole('affiliate'); setToast('Affiliate mode on') }}>Add affiliate</button>}{!u.roles.includes('seller') && <button type="button" className="btn btn-g btn-sm" onClick={() => { addRole('seller'); setToast('Trainer studio on') }}>Add trainer studio</button>}</div></div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>{!u.roles.includes('affiliate') && <button type="button" className="btn btn-g btn-sm" onClick={() => { addRole('affiliate'); setToast('Affiliate mode on') }}>Add affiliate</button>}</div></div>
       </form>
     </div>
     {toast && <Toast msg={toast} onDone={() => setToast('')} />}</>
@@ -287,40 +285,40 @@ function Payouts({ u }: { u: User }) {
     {toast && <Toast msg={toast} onDone={() => setToast('')} />}</>
 }
 
-/* ---------------- trainer studio ---------------- */
-function Studio({ u }: { u: User }) {
-  const { db } = useStore(); const mine = db.courses.filter((c) => c.sellerId === u.id)
-  const sales = db.orders.filter((o) => mine.some((c) => 'c-' + c.id === o.bundle) && o.status === 'paid')
-  return <><Top title={<>Trainer studio</>} sub="Create courses, send them for review and track your students." right={<Link to="/studio/new" className="btn btn-p btn-sm">Add a course</Link>} />
-    <div className="kpis" style={{ marginBottom: 18 }}><Kpi l="Courses" v={mine.length} /><Kpi l="Published" v={mine.filter((c) => c.status === 'published').length} /><Kpi l="Students" v={new Set(sales.map((s) => s.userId)).size} /><Kpi l="Sales" v={inr(sales.reduce((a, s) => a + s.amount, 0))} /></div>
-    <CourseList u={u} /></>
-}
-const stLabel: Record<SellerCourse['status'], [string, string]> = { draft: ['Draft', 'warn'], review: ['In review', 'warn'], published: ['Published', 'ok'], rejected: ['Needs changes', 'warn'] }
+/* ---------------- courses (founders add them from admin) ---------------- */
+const stLabel: Record<SellerCourse['status'], [string, string]> = { draft: ['Draft', 'warn'], review: ['Draft', 'warn'], published: ['Live', 'ok'], rejected: ['Hidden', 'warn'] }
 function DelBtn({ onYes }: { onYes: () => void }) {
   const [ask, setAsk] = useState(false)
   useEffect(() => { if (!ask) return; const t = setTimeout(() => setAsk(false), 3500); return () => clearTimeout(t) }, [ask])
   return <button className="link" style={{ marginLeft: 14, color: ask ? 'var(--bad)' : undefined }} onClick={() => ask ? onYes() : setAsk(true)}>{ask ? 'Tap again to delete' : 'Delete'}</button>
 }
-function CourseList({ u }: { u: User }) {
-  const { db } = useStore(); const mine = db.courses.filter((c) => c.sellerId === u.id)
-  return <div className="panel tscroll">{mine.length ? <table className="table"><thead><tr><th>Course</th><th>Price</th><th>Lessons</th><th>Status</th><th /></tr></thead><tbody>
-    {mine.map((c) => <tr key={c.id}><td><b>{c.title}</b><div className="dim" style={{ fontSize: 13 }}>{c.category}</div></td><td>{inr(c.price)}</td><td>{c.lessons.length}</td><td><span className={`badge ${stLabel[c.status][1]}`}>{stLabel[c.status][0]}</span></td>
-      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}><Link className="link" to={`/studio/edit/${c.id}`}>Edit</Link>{c.status === 'published' && <Link className="link" style={{ marginLeft: 14 }} to={`/courses/c-${c.id}`}>View</Link>}<DelBtn onYes={() => deleteCourse(c.id)} /></td></tr>)}
-  </tbody></table> : <Empty icon="play" title="Add your first course" text="Give it a title, price and lessons, then send it to Crafted Skills for review."><Link to="/studio/new" className="btn btn-p">Add a course</Link></Empty>}</div>
+function CourseList() {
+  const { db } = useStore(); const [toast, setToast] = useState('')
+  const paid = db.orders.filter((o) => o.status === 'paid')
+  const list = [...db.courses].sort((a, b) => b.createdAt - a.createdAt)
+  return <><div className="kpis" style={{ marginBottom: 18 }}><Kpi l="Bundles" v={BUNDLES.length} e="from the website" /><Kpi l="Added courses" v={list.length} /><Kpi l="Live" v={list.filter((c) => c.status === 'published').length} /><Kpi l="Course sales" v={inr(paid.filter((o) => o.bundle.startsWith('c-')).reduce((a, o) => a + o.amount, 0))} /></div>
+    <div className="panel tscroll">{list.length ? <table className="table"><thead><tr><th>Course</th><th>Price</th><th>Lessons</th><th>Students</th><th>Status</th><th /></tr></thead><tbody>
+    {list.map((c) => <tr key={c.id}><td><b>{c.title}</b><div className="dim" style={{ fontSize: 13 }}>{c.category}</div></td><td>{inr(c.price)}</td><td>{c.lessons.length}</td><td>{new Set(paid.filter((o) => o.bundle === 'c-' + c.id).map((o) => o.userId)).size}</td><td><span className={`badge ${stLabel[c.status][1]}`}>{stLabel[c.status][0]}</span></td>
+      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+        {c.status === 'published' ? <button className="link" onClick={() => { setCourseStatus(c.id, 'draft'); setToast('Course hidden from the website') }}>Unpublish</button> : <button className="link" onClick={() => { setCourseStatus(c.id, 'published'); setToast('Course is live') }}>Publish</button>}
+        <Link className="link" style={{ marginLeft: 14 }} to={`/admin/courses/edit/${c.id}`}>Edit</Link>{c.status === 'published' && <Link className="link" style={{ marginLeft: 14 }} to={`/courses/c-${c.id}`}>View</Link>}<DelBtn onYes={() => deleteCourse(c.id)} /></td></tr>)}
+  </tbody></table> : <Empty icon="play" title="Add your first course" text="Give it a title, price and lessons. Publish it and it shows on the Courses page."><Link to="/admin/courses/new" className="btn btn-p">Add a course</Link></Empty>}</div>
+  {toast && <Toast msg={toast} onDone={() => setToast('')} />}</>
 }
-function CourseEditor({ u, id }: { u: User; id?: string }) {
-  const { db } = useStore(); const nav = useNavigate(); const ex = db.courses.find((c) => c.id === id && c.sellerId === u.id)
+function CourseEditor({ id }: { id?: string }) {
+  const { db } = useStore(); const nav = useNavigate(); const ex = db.courses.find((c) => c.id === id)
   const [f, setF] = useState({ title: ex?.title || '', category: ex?.category || '', price: ex ? String(ex.price) : '', description: ex?.description || '' })
   const [lessons, setLessons] = useState(ex?.lessons.length ? ex.lessons : [{ title: '', url: '' }]); const [err, setErr] = useState('')
+  if (id && !ex) return <Navigate to="/admin/courses" replace />
   const save = (status: SellerCourse['status']) => {
     setErr(''); const price = Number(f.price)
-    if (f.title.trim().length < 4) return setErr('Give your course a clear title.')
+    if (f.title.trim().length < 4) return setErr('Give the course a clear title.')
     if (!price || price < 99) return setErr('Set a price of at least ₹99.')
     const ls = lessons.filter((l) => l.title.trim())
-    if (status === 'review' && !ls.length) return setErr('Add at least one lesson before sending for review.')
-    saveCourse({ id: ex?.id, title: f.title.trim(), category: f.category.trim() || 'General', price, description: f.description.trim(), lessons: ls, status }); nav('/studio/courses')
+    if (status === 'published' && !ls.length) return setErr('Add at least one lesson before publishing.')
+    try { saveCourse({ id: ex?.id, title: f.title.trim(), category: f.category.trim() || 'General', price, description: f.description.trim(), lessons: ls, status }); nav('/admin/courses') } catch (y) { setErr((y as Error).message) }
   }
-  return <><Top title={ex ? 'Edit course' : 'Add a course'} sub="Crafted Skills reviews every course before it goes live." />
+  return <><Top title={ex ? 'Edit course' : 'Add a course'} sub="Published courses appear on the Courses page straight away." />
     {err && <div className="alert bad" style={{ marginBottom: 14 }}>{err}</div>}
     <div className="g2" style={{ alignItems: 'start' }}>
       <div className="panel form"><h2>Course details</h2>
@@ -332,13 +330,13 @@ function CourseEditor({ u, id }: { u: User; id?: string }) {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}><b className="dim" style={{ width: 24 }}>{i + 1}</b><input className="input" placeholder="Lesson title" value={l.title} onChange={(e) => setLessons(lessons.map((x, k) => k === i ? { ...x, title: e.target.value } : x))} />{lessons.length > 1 && <button className="btn btn-g btn-sm" onClick={() => setLessons(lessons.filter((_, k) => k !== i))} aria-label="Remove lesson">✕</button>}</div>
           <input className="input" placeholder="Video link (YouTube unlisted, Vimeo or Drive)" value={l.url} onChange={(e) => setLessons(lessons.map((x, k) => k === i ? { ...x, url: e.target.value } : x))} style={{ marginLeft: 32, width: 'calc(100% - 32px)' }} /></div>)}
         <button className="btn btn-g btn-sm" onClick={() => setLessons([...lessons, { title: '', url: '' }])}>+ Add lesson</button>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}><button className="btn btn-p" onClick={() => save('review')}>Send for review</button><button className="btn btn-g" onClick={() => save('draft')}>Save draft</button></div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}><button className="btn btn-p" onClick={() => save('published')}>Publish course</button><button className="btn btn-g" onClick={() => save('draft')}>Save draft</button></div>
       </div>
     </div></>
 }
 
 /* ---------------- admin ---------------- */
-function Admin({ sec }: { sec: string }) {
+function Admin({ sec, arg, id }: { sec: string; arg?: string; id?: string }) {
   const { db } = useStore(); const [toast, setToast] = useState('')
   const paid = db.orders.filter((o) => o.status === 'paid'); const rev = paid.reduce((a, o) => a + o.amount, 0)
   const name = (id: string) => db.users.find((u) => u.id === id)?.name || '—'
@@ -352,11 +350,7 @@ function Admin({ sec }: { sec: string }) {
     <div className="panel tscroll">{db.users.length ? <table className="table"><thead><tr><th>Name</th><th>Contact</th><th>Roles</th><th>Joined</th><th>Referred by</th><th>Spent</th></tr></thead><tbody>
       {db.users.map((u) => <tr key={u.id}><td><b>{u.name}</b>{u.roles.includes('affiliate') && <div className="dim" style={{ fontSize: 12 }}>code {u.refCode}</div>}</td><td>{u.email}<div className="dim" style={{ fontSize: 12 }}>{u.phone}</div></td><td>{u.roles.join(', ')}</td><td>{fmtDate(u.createdAt)}</td><td>{u.referredBy || '—'}</td><td><b>{inr(paid.filter((o) => o.userId === u.id).reduce((a, o) => a + o.amount, 0))}</b></td></tr>)}
     </tbody></table> : <Empty icon="users" title="No accounts yet" text="Sign-ups appear here." />}</div></>
-  if (sec === 'review') { const list = db.courses.filter((c) => c.status !== 'draft'); return <><Top title="Course review" sub="Trainer courses waiting for approval." />
-    <div className="panel tscroll">{list.length ? <table className="table"><thead><tr><th>Course</th><th>Trainer</th><th>Price</th><th>Lessons</th><th>Status</th><th /></tr></thead><tbody>
-      {list.map((c) => <tr key={c.id}><td><b>{c.title}</b><div className="dim" style={{ fontSize: 12 }}>{c.description.slice(0, 80)}</div></td><td>{c.sellerName}</td><td>{inr(c.price)}</td><td>{c.lessons.length}</td><td><span className={`badge ${stLabel[c.status][1]}`}>{stLabel[c.status][0]}</span></td>
-        <td style={{ whiteSpace: 'nowrap' }}>{c.status !== 'published' && <button className="link" onClick={() => { setCourseStatus(c.id, 'published'); setToast('Course published') }}>Publish</button>}{c.status !== 'rejected' && <button className="link" style={{ marginLeft: 12 }} onClick={() => setCourseStatus(c.id, 'rejected')}>{c.status === 'published' ? 'Unpublish' : 'Ask for changes'}</button>}</td></tr>)}
-    </tbody></table> : <Empty icon="check" title="Nothing to review" text="Courses sent by trainers appear here." />}</div>{toast && <Toast msg={toast} onDone={() => setToast('')} />}</> }
+  if (sec === 'courses') return arg === 'new' ? <CourseEditor /> : arg === 'edit' && id ? <CourseEditor key={id} id={id} /> : <><Top title="Courses" sub="Add, publish and edit the courses learners can buy." right={<Link to="/admin/courses/new" className="btn btn-p btn-sm">Add a course</Link>} /><CourseList /></>
   if (sec === 'messages') return <><Top title="Messages" sub="From the contact form." />
     <div style={{ display: 'grid', gap: 12 }}>{db.messages.length ? [...db.messages].reverse().map((m, i) => <div key={i} className="panel"><div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}><b>{m.name} · <a className="link" href={`mailto:${m.email}`}>{m.email}</a></b><span className="dim">{fmtTime(m.at)}</span></div>{m.subject && <p style={{ marginTop: 6, fontWeight: 600 }}>{m.subject}</p>}<p className="muted" style={{ marginTop: 6 }}>{m.message}</p></div>) : <div className="panel"><Empty icon="mail" title="No messages" text="Contact form messages appear here." /></div>}</div></>
   const affs = db.users.filter((u) => u.roles.includes('affiliate'))
@@ -373,7 +367,7 @@ export default function Dashboard() {
   useEffect(() => { window.scrollTo(0, 0) }, [loc.pathname])
   if (!user) return <Navigate to={`/login?next=${encodeURIComponent(loc.pathname)}`} replace />
   const p = loc.pathname.split('/').filter(Boolean)
-  const [area, sec = '', arg] = p
+  const [area, sec = '', arg, arg2] = p
   let body: ReactNode = null, title = 'Dashboard'
   if (area === 'dashboard') {
     title = 'My learning'
@@ -383,12 +377,10 @@ export default function Dashboard() {
     title = 'Affiliate'
     body = sec === '' ? <Partner u={user} /> : sec === 'links' ? <Links u={user} /> : sec === 'referrals' ? <Referrals u={user} /> : sec === 'leaderboard' ? <Board u={user} /> : sec === 'payouts' ? <Payouts u={user} /> : <Navigate to="/partner" replace />
   } else if (area === 'studio') {
-    if (!user.roles.includes('seller')) return <Shell user={user}><Top title="Trainer studio" sub="Teach with Crafted Skills." /><div className="panel"><Empty icon="play" title="Open your trainer studio" text="Create courses, send them for review and track your students."><button className="btn btn-p" onClick={() => addRole('seller')}>Open trainer studio</button></Empty></div></Shell>
-    title = 'Trainer studio'
-    body = sec === '' ? <Studio u={user} /> : sec === 'courses' ? <><Top title="My courses" right={<Link to="/studio/new" className="btn btn-p btn-sm">Add a course</Link>} /><CourseList u={user} /></> : sec === 'new' ? <CourseEditor u={user} /> : sec === 'edit' ? <CourseEditor key={arg} u={user} id={arg} /> : <Navigate to="/studio" replace />
+    return <Navigate to={user.roles.includes('admin') ? '/admin/courses' : '/dashboard'} replace />
   } else if (area === 'admin') {
     if (!user.roles.includes('admin')) return <Navigate to="/dashboard" replace />
-    title = 'Admin'; body = <Admin sec={sec} />
+    title = 'Admin'; body = <Admin sec={sec} arg={arg} id={arg2} />
   }
   return <Shell user={user}><Seo title={`${title} | Crafted Skills`} />{body}</Shell>
 }
