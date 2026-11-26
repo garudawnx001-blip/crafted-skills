@@ -29,7 +29,7 @@ function Frame() {
   // page-to-page view transitions for every in-site link (Chrome, Edge, Safari 18+); others just navigate
   useEffect(() => {
     const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } }
-    if (!doc.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (!doc.startViewTransition) return
     const onClick = (e: MouseEvent) => {
       if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
       const a = (e.target as Element).closest?.('a'); if (!a || a.target || a.hasAttribute('download')) return

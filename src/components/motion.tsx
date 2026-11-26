@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, type ReactNode } from 'react'
 
-export const reduceMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion:reduce)').matches
+// The full experience runs on every phone (many Android phones switch animations off to save battery).
+// Phones that ask for less motion only lose the endless ambient loops (see the 'lite' class in main.tsx).
+export const reduceMotion = () => false
 
 /* One shared, passive scroll loop. Each subscriber gets progress values and writes
    transform/opacity straight onto its own elements (compositor-only, no CSS-variable

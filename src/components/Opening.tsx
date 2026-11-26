@@ -10,7 +10,6 @@ export const shouldOpen = () => {
   try {
     const forced = /[?&]intro\b/.test(location.search)
     if (!forced && location.hash && location.hash !== '#/' && location.hash !== '#') return false
-    if (matchMedia('(prefers-reduced-motion:reduce)').matches) return false
     if (!forced && sessionStorage.getItem('cs_open')) return false
     sessionStorage.setItem('cs_open', '1'); return true
   } catch { return false }

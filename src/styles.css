@@ -490,7 +490,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .wa{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:30;width:56px;height:56px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 14px 30px -10px rgba(37,211,102,.7)}
 .wa svg{width:30px;height:30px;fill:#fff}
 
-@media (prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce) and (max-width:1px){
   *,*:before,*:after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
   .rv{opacity:1;transform:none}
 }
@@ -594,7 +594,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .wipe.in{clip-path:inset(0 0 0 0 round 28px)}
 .wipe.in img{transform:none}
 .eyebrow.rv{transform:translate3d(-16px,0,0)}
-@media (prefers-reduced-motion:reduce){.sh .w>span,.stg>*,.wipe,.wipe img{transform:none!important;opacity:1!important;clip-path:none!important}}
+@media (prefers-reduced-motion:reduce) and (max-width:1px){.sh .w>span,.stg>*,.wipe,.wipe img{transform:none!important;opacity:1!important;clip-path:none!important}}
 
 .page{animation:pageIn .55s cubic-bezier(.16,1,.3,1) both}
 @keyframes pageIn{from{opacity:0}}
@@ -624,7 +624,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 }
 @keyframes scFocus{0%,22%{transform:translate3d(0,24px,0) scale(.87);opacity:.45}50%{transform:translate3d(0,0,0) scale(1);opacity:1}78%,100%{transform:translate3d(0,24px,0) scale(.87);opacity:.45}}
 @keyframes scBar{from{transform:scaleX(.08)}to{transform:scaleX(1)}}
-@media (prefers-reduced-motion:reduce){.css-sd .sc-item,.css-sd .sc-prog span{animation:none}}
+@media (prefers-reduced-motion:reduce) and (max-width:1px){.css-sd .sc-item,.css-sd .sc-prog span{animation:none}}
 @media (max-width:640px){.sc-ui .rail-ui{display:none}.head-row .sc-ui{margin-top:16px}.sc-track{--cw:80vw;padding-top:12px;padding-bottom:32px}.sc-prog{max-width:180px}}
 
 /* ===== v3: premium hero, spacing fixes, transitions, feedback ===== */
@@ -696,9 +696,9 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .buybox img{view-transition-name:bundle-art}
 .vt-nav .page{animation:none}
 ::view-transition-old(root){animation:vtOut .22s cubic-bezier(.4,0,1,1) both}
-::view-transition-new(root){animation:vtIn .55s cubic-bezier(.16,1,.3,1) both}
-@keyframes vtOut{to{opacity:0;transform:translate3d(0,-10px,0)}}
-@keyframes vtIn{from{opacity:0;transform:translate3d(0,18px,0)}}
+::view-transition-new(root){animation:vtIn .35s ease both}
+@keyframes vtOut{to{opacity:0}}
+@keyframes vtIn{from{opacity:0}}
 ::view-transition-group(bundle-art){animation-duration:.6s;animation-timing-function:cubic-bezier(.2,.8,.2,1)}
 ::view-transition-image-pair(bundle-art){border-radius:18px;overflow:hidden}
 .vt-filter::view-transition-group(*){animation-duration:.55s;animation-timing-function:cubic-bezier(.2,.8,.2,1)}
@@ -713,7 +713,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .cert:after{content:"";position:absolute;inset:-40%;background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.8) 50%,transparent 58%);transform:translate3d(-70%,0,0);animation:shine 1.8s cubic-bezier(.4,0,.2,1) .5s both;pointer-events:none}
 @keyframes shine{to{transform:translate3d(70%,0,0)}}
 
-@media (prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce) and (max-width:1px){
   .hw>span,.swoosh path,.mini.he,.mini .bar i,.arch-in img,.hero:before,.hero:after,.kchip i:after,.tt .rv,.cert:after,.pring,.tick{animation:none!important;transform:none;stroke-dashoffset:0}
   .hero .pic{animation:none!important}
   .showcase .sc-item>.bcard{opacity:1;transform:none}
@@ -762,7 +762,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .fnext b{display:block;font:400 28px var(--display);color:var(--ink);margin:2px 0}.fnext .arr{font-size:26px;color:var(--violet)}
 @media (max-width:900px){.fgrid{grid-template-columns:1fr}.fphoto{position:relative;top:0;max-width:460px;width:100%;margin:0 auto}.fframe{aspect-ratio:4/4.4}}
 @media (max-width:640px){.fhero{padding-top:84px}.fbio p{font-size:15.5px}.fnext{grid-template-columns:64px 1fr auto;padding:12px 16px 12px 12px}.fnext img{width:64px;height:64px}.fnext b{font-size:22px}}
-@media (prefers-reduced-motion:reduce){.fframe,.fframe img,.fbadge{animation:none;clip-path:none;transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce) and (max-width:1px){.fframe,.fframe img,.fbadge{animation:none;clip-path:none;transform:none;opacity:1}}
 
 /* scroll deck (home courses) */
 .deck{--cw:min(400px,80vw);--gap:clamp(12px,2vw,26px);--dist:calc((var(--n) - 1) * (var(--cw) + var(--gap)));height:calc(100svh + var(--dist));position:relative;view-timeline:--deck block}
@@ -799,7 +799,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 /* dashboard polish */
 .main>*{animation:dashIn .7s cubic-bezier(.16,1,.3,1) both}
 .main>*:nth-child(2){animation-delay:.06s}.main>*:nth-child(3){animation-delay:.12s}.main>*:nth-child(4){animation-delay:.18s}.main>*:nth-child(5){animation-delay:.24s}.main>*:nth-child(n+6){animation-delay:.3s}
-@keyframes dashIn{from{opacity:0;transform:translate3d(0,16px,0)}}
+@keyframes dashIn{from{opacity:0}}
 .kpis>.kpi{animation:dashIn .7s cubic-bezier(.16,1,.3,1) both}.kpis>.kpi:nth-child(2){animation-delay:.07s}.kpis>.kpi:nth-child(3){animation-delay:.14s}.kpis>.kpi:nth-child(4){animation-delay:.21s}
 .kpi{transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s,border-color .3s;position:relative;overflow:hidden}
 .kpi:hover{transform:translateY(-3px);box-shadow:var(--sh1);border-color:var(--lav3)}
@@ -817,7 +817,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .side a{position:relative;transition:background .25s,color .25s}
 .side a.active:before{content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:3px;background:var(--indigo);animation:barIn .4s cubic-bezier(.16,1,.3,1) both;transform-origin:50% 50%}
 @media (max-width:640px){.hello{grid-template-columns:1fr}.hello .btn{justify-self:start}}
-@media (prefers-reduced-motion:reduce){.main>*,.kpis>.kpi{animation:none}}
+@media (prefers-reduced-motion:reduce) and (max-width:1px){.main>*,.kpis>.kpi{animation:none}}
 
 /* auth: roomier form, art never clipped */
 .auth{grid-template-columns:minmax(0,5fr) minmax(0,6fr)}
@@ -841,7 +841,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .deck-item{transform-style:preserve-3d;backface-visibility:hidden}
 .deck-item>.bcard{animation:dkFloat 6.5s ease-in-out infinite;animation-delay:calc(var(--j) * -.9s)}
 @keyframes dkFloat{0%,100%{translate:0 0;rotate:0deg}50%{translate:0 -12px;rotate:-.6deg}}
-@media (prefers-reduced-motion:reduce){.deck-item>.bcard{animation:none}}
+@media (prefers-reduced-motion:reduce) and (max-width:1px){.deck-item>.bcard{animation:none}}
 
 /* ===== v5: floating 3D course cards (no pinning) ===== */
 .sc-float .sc-track{padding-top:26px;padding-bottom:52px}
@@ -854,7 +854,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
   82%,100%{transform:perspective(1300px) translate3d(0,44px,-170px) rotateY(32deg) scale(.84);opacity:.4}}
 .sc-float .sc-item>.bcard{animation:dkFloat 6.5s ease-in-out infinite;animation-delay:calc(var(--k) * -.9s)}
 .sc-float .sc-item.on>.bcard{box-shadow:0 2px 6px rgba(40,10,90,.06),0 60px 90px -46px rgba(50,1,130,.55)}
-@media (prefers-reduced-motion:reduce){.sc-float .sc-item>.bcard{animation:none}}
+@media (prefers-reduced-motion:reduce) and (max-width:1px){.sc-float .sc-item>.bcard{animation:none}}
 
 /* ===== Apple-style zoom: the photo grows from a framed card to full screen, then the line appears.
    GPU-only: transform + opacity (no clip-path or size changes), so it never repaints while scrolling. ===== */
@@ -882,7 +882,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 @supports not (animation-timeline:view()){
   .zoom{height:auto}.zoom-pin{position:relative;height:78svh}.zoom-media{transform:none;border-radius:0}.zoom-media img{transform:none}.zoom-shade,.zoom-copy{opacity:1;transform:none}
 }
-@media (prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce) and (max-width:1px){
   .zoom{height:auto}.zoom-pin{position:relative;height:78svh}.zoom-media,.zoom-media img,.zoom-shade,.zoom-copy{animation:none!important}.zoom-media{transform:none;border-radius:0}.zoom-media img{transform:none}.zoom-shade,.zoom-copy{opacity:1;transform:none}
 }
 /* low-power devices: keep every scroll effect, drop the always-running ambient loops */
@@ -897,7 +897,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 @supports (animation-timeline:view()){.zoom-intro{animation:zmIntro linear both;animation-timeline:--zm;animation-range:contain 0% contain 30%}}
 @keyframes zmIntro{to{opacity:0;transform:translate3d(0,-40px,0) scale(.96)}}
 @supports not (animation-timeline:view()){.zoom-intro{display:none}}
-@media (prefers-reduced-motion:reduce){.zoom-intro{display:none}}
+@media (prefers-reduced-motion:reduce) and (max-width:1px){.zoom-intro{display:none}}
 
 /* ===== orbit: 3D ring of course cards ===== */
 .orbit{--ow:min(340px,74vw)}
