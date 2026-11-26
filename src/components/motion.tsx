@@ -364,11 +364,18 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     st.addEventListener('pointerdown', pd); addEventListener('pointermove', pm, { passive: true }); addEventListener('pointerup', pu); addEventListener('pointercancel', pu)
     st.addEventListener('click', click, true); st.addEventListener('pointerenter', he); st.addEventListener('pointerleave', hl)
     // decode every card image ahead of time (off the main thread), so nothing stalls when the ring arrives
-    const warm = () => st.querySelectorAll('img').forEach((im) => { (im as HTMLImageElement).decode?.().catch(() => {}) })
+    const warm = () => {
+      Promise.all([...st.querySelectorAll('img')].map((im) => (im as HTMLImageElement).decode?.().catch(() => {}))).then(() => {
+        // pre-build the 3D layers: show the ring invisibly in view for two frames, then put it back
+        const b = st.getBoundingClientRect(); if (b.top < innerHeight && b.bottom > 0) return
+        const rise = st.querySelector('.orbit-rise') as HTMLElement | null; if (!rise) return
+        st.style.transform = `translate3d(0,${Math.round(-b.top + 60)}px,0)`; st.style.opacity = '0.001'; st.style.pointerEvents = 'none'
+        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => { st.style.transform = ''; st.style.opacity = ''; st.style.pointerEvents = '' })))
+      }) }
     const ric = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
-    if (ric) ric(warm); else setTimeout(warm, 800)
+    const wt = window.setTimeout(() => { if (ric) ric(warm); else warm() }, 1200)
     apply(); sync()
-    return () => { cancelAnimationFrame(raf); clearTimeout(autoT); io.disconnect(); st.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); removeEventListener('pointercancel', pu); st.removeEventListener('click', click, true); st.removeEventListener('pointerenter', he); st.removeEventListener('pointerleave', hl) }
+    return () => { clearTimeout(wt); cancelAnimationFrame(raf); clearTimeout(autoT); io.disconnect(); st.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); removeEventListener('pointercancel', pu); st.removeEventListener('click', click, true); st.removeEventListener('pointerenter', he); st.removeEventListener('pointerleave', hl) }
   }, [n, r, th])
   // the cards render once; the front-card highlight is switched directly, so turning never re-renders them
   const items = useMemo(() => children.map((c, j) => <div className="orbit-item" key={j} data-j={j} style={{ transform: `rotateY(${j * th}deg) translate3d(0,0,${r}px)` }}>
