@@ -1062,3 +1062,10 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .orbit-stage{--oh:458px}
 @media (min-width:1000px){.orbit-stage{--oh:462px}}
 @media (max-width:640px){.orbit-stage{--oh:512px}}
+/* deck fan-out replaces the camera pull-back */
+.orbit-rise{animation:none!important;transform:none!important}
+.orbit-topfade{display:none}
+/* the 3D wrapper must never catch taps: they go to the cards (links work), empty space goes to the stage (drag) */
+.orbit-rise,.orbit-ring{pointer-events:none}
+.orbit-item{pointer-events:auto}
+.orbit-item:not(.on) .orbit-face a{pointer-events:none}

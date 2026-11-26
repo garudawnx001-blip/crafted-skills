@@ -322,6 +322,17 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     let vis = false, lastUser = -1e9, autoT = 0
     const apply = () => { g.style.transform = `translate3d(0,0,${-r}px) rotateX(${TILT}deg) rotateY(${ang.toFixed(3)}deg)` }
     const front = () => ((Math.round(-ang / th) % n) + n) % n
+    // Deck fan-out reveal: the bundles start as one neat stack at the front and fan out round the ring
+    // as the section scrolls in. Only the 7 card transforms change (compositor work), and only while scrolling.
+    const cards = [...g.querySelectorAll<HTMLElement>('.orbit-item')]
+    let fan = -1
+    const fanP = () => { const b = st.getBoundingClientRect(), s0 = innerHeight * .98, s1 = innerHeight * (innerWidth < 641 ? .3 : .38)
+      return Math.max(0, Math.min(1, (s0 - b.top) / (s0 - s1))) }
+    const ease = (k: number) => k * k * k * (k * (k * 6 - 15) + 10)
+    const layFan = () => { const e = ease(fan), q = 1 - e
+      cards.forEach((el, j) => { const d = ((j * th + ang) % 360 + 540) % 360 - 180, k = Math.abs(d) / th, sg = Math.sign(d)
+        el.style.transform = e >= 1 ? `rotateY(${j * th}deg) translate3d(0,0,${r}px)`
+          : `rotateY(${(-ang + d * e).toFixed(2)}deg) translate3d(${(q * sg * k * 14).toFixed(1)}px,${(-q * k * 10).toFixed(1)}px,${(r - q * k * 26).toFixed(1)}px)` }) }
     let shownI = -1
     const sync = () => { const i = front(); if (i === shownI) return; shownI = i
       g.querySelectorAll<HTMLElement>('.orbit-item').forEach((el, j) => { el.classList.toggle('on', j === i); el.setAttribute('aria-hidden', String(j !== i)) })
@@ -332,7 +343,10 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     const out = (k: number) => 1 - Math.pow(1 - k, 3)
     const loop = (t: number) => { raf = 0
       if (anim) { const k = Math.min(1, (t - anim.t0) / anim.dur); ang = anim.from + (anim.to - anim.from) * anim.ease(k); if (k >= 1) anim = null }
-      apply(); sync(); if (anim) raf = requestAnimationFrame(loop) }
+      apply(); sync()
+      const p = fanP(); if (p !== fan || (p < 1 && anim)) { fan = p; layFan() }
+      if (fan >= 1 && !started) { started = true; clearTimeout(autoT); autoStep(); autoT = window.setTimeout(auto, 1900) }
+      if (anim) raf = requestAnimationFrame(loop) }
     const kick = () => { if (!raf) raf = requestAnimationFrame(loop) }
     const tween = (to: number, dur: number, ease = inOut) => { anim = { from: ang, to, t0: performance.now(), dur, ease }; kick() }
     const snapStop = (a: number) => Math.round(a / th) * th
@@ -341,11 +355,10 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     // autoplay: starts the moment the reveal completes and keeps turning; only an active drag
     // (or the tab being hidden) holds it, and it resumes 1.6s after the finger lifts
     let started = false
-    const autoStep = () => { if (!vis || dragging || anim || document.hidden || performance.now() - lastUser < 1600) return; tween(snapStop(ang) - th, 1000, glide) }
+    const autoStep = () => { if (fan < 1 || !vis || dragging || anim || document.hidden || performance.now() - lastUser < 1600) return; tween(snapStop(ang) - th, 1000, glide) }
     const auto = () => { autoT = window.setTimeout(auto, 1900); if (started) autoStep() }
     autoT = window.setTimeout(auto, 1900)
-    const revealed = () => { const b = st.getBoundingClientRect(); return b.top <= innerHeight * .8 && b.bottom > 0 }
-    const onScr = () => { if (!started && revealed()) { started = true; vis = true; clearTimeout(autoT); autoStep(); autoT = window.setTimeout(auto, 1900) } }
+    const onScr = () => { const b = st.getBoundingClientRect(); if (b.top < innerHeight * 1.05 && b.bottom > -innerHeight * .2) { vis = true; kick() } }
     addEventListener('scroll', onScr, { passive: true }); onScr()
     const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting }, { threshold: .15 }); io.observe(st)
     // swipe/drag: the ring follows the finger 1:1, then glides on with the flick and settles on a card
@@ -378,7 +391,7 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
       }) }
     const ric = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
     const wt = window.setTimeout(() => { if (ric) ric(warm); else warm() }, 1200)
-    apply(); sync()
+    apply(); sync(); fan = fanP(); layFan(); onScr()
     return () => { clearTimeout(wt); cancelAnimationFrame(raf); clearTimeout(autoT); io.disconnect(); removeEventListener('scroll', onScr); st.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); removeEventListener('pointercancel', pu); st.removeEventListener('click', click, true); st.removeEventListener('pointerenter', he); st.removeEventListener('pointerleave', hl) }
   }, [n, r, th])
   // the cards render once; the front-card highlight is switched directly, so turning never re-renders them
