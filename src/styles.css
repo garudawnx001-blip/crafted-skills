@@ -953,7 +953,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
   .orbit-rise{animation:obRise linear both;animation-timeline:--orb;animation-range:entry 5% cover 42%}
   .orbit-floor,.orbit-spot{animation:obGlow linear both;animation-timeline:--orb;animation-range:entry 30% cover 45%}
 }
-@keyframes obRise{from{transform:translate3d(0,90px,-260px) rotateX(62deg) scale(.82)}to{transform:none}}
+@keyframes obRise{from{transform:translate3d(0,110px,-320px) rotateX(58deg)}to{transform:translate3d(0,0,0) rotateX(0deg)}}
 @keyframes obGlow{from{opacity:0}to{opacity:1}}
 .orbit-floor{opacity:1;transform:none}.orbit-spot{opacity:1}
 .orbit-item.on .orbit-face:after{animation:obSheen 1.3s cubic-bezier(.4,0,.2,1) .25s both}
@@ -968,3 +968,18 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .orbit-item.on .orbit-face{transform:translateZ(36px)}
 .orbit-item.on .orbit-face:before{opacity:0}
 .orbit-item.on .orbit-face>.bcard{box-shadow:0 2px 6px rgba(40,10,90,.06),0 70px 100px -50px rgba(50,1,130,.6)}
+
+/* performance: keep each card's drawing fixed while it moves (no redraw per frame), and use
+   pre-drawn glows instead of large blurred shadows on 3D-transformed cards */
+.orbit-item,.orbit-face{will-change:transform}
+.orbit-face>.bcard,.orbit-item.on .orbit-face>.bcard{box-shadow:0 0 0 1px rgba(124,58,237,.08)!important}
+.orbit-back{box-shadow:none}
+.orbit-face{overflow:visible}
+.orbit-face>.bcard{position:relative;z-index:1}
+.orbit-face:after{z-index:3}
+.orbit-glow{position:absolute;left:6%;right:6%;bottom:-38px;height:70px;border-radius:50%;background:radial-gradient(closest-side,rgba(50,1,130,.28),rgba(50,1,130,0));opacity:.45;transition:opacity .9s ease;pointer-events:none;z-index:0}
+.orbit-item.on .orbit-glow{opacity:1}
+
+/* light sweep stays inside the card */
+.orbit-face:after{transform:none;background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.6) 50%,transparent 60%) no-repeat;background-size:300% 100%;background-position:120% 0}
+@keyframes obSheen{0%{opacity:1;background-position:120% 0}100%{opacity:1;background-position:-20% 0}}
