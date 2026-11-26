@@ -1063,7 +1063,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 @media (min-width:1000px){.orbit-stage{--oh:462px}}
 @media (max-width:640px){.orbit-stage{--oh:512px}}
 /* deck fan-out replaces the camera pull-back */
-.orbit-rise{animation:none!important;transform:none!important}
+.orbit-rise{animation:none!important}
 .orbit-topfade{display:none}
 /* the 3D wrapper must never catch taps: they go to the cards (links work), empty space goes to the stage (drag) */
 .orbit-rise,.orbit-ring{pointer-events:none}
@@ -1081,3 +1081,6 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .orbit-item.gl .orbit-face:after{animation:dkGlint 1s cubic-bezier(.3,.6,.2,1) both}
 .orbit-item.gl2 .orbit-face:after{animation:dkGlint2 1s cubic-bezier(.3,.6,.2,1) both}
 .orbit-item.on.gl .orbit-face:after,.orbit-item.on.gl2 .orbit-face:after{animation:obSheen 1.3s cubic-bezier(.4,0,.2,1) .25s both}
+/* the course deck holds in place (sticky) while it opens */
+.orbit-pin{position:sticky;top:0}
+.orbit-sec .orbit-pin{padding-top:4px}

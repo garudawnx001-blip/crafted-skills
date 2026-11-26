@@ -306,7 +306,7 @@ function Mark3() { return <span className="ob-logo"><img src="img/mark.webp" alt
    per frame). Hover or touch pauses it; drag spins it; tapping a side card brings it to the front. */
 export function Orbit({ head, children }: { head: ReactNode; children: ReactNode[] }) {
   const n = children.length, th = 360 / n, TILT = -7
-  const stage = useRef<HTMLDivElement>(null), ring = useRef<HTMLDivElement>(null)
+  const stage = useRef<HTMLDivElement>(null), ring = useRef<HTMLDivElement>(null), wrapEl = useRef<HTMLDivElement>(null), pinEl = useRef<HTMLDivElement>(null)
   const ctl = useRef<{ go: (d: number) => void } | null>(null)
   const [idx, setIdx] = useState(0), [r, setR] = useState(380)
   useEffect(() => {
@@ -326,23 +326,37 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     // as the section scrolls in. Only the 7 card transforms change (compositor work), and only while scrolling.
     const cards = [...g.querySelectorAll<HTMLElement>('.orbit-item')]
     let fan = -1
-    const fanP = () => { const b = st.getBoundingClientRect(), s0 = Math.min(innerHeight * .8, innerHeight - b.height * .92), s1 = Math.max(s0 - innerHeight * .6, innerHeight * .03)
-      return Math.max(0, Math.min(1, (s0 - b.top) / (s0 - s1))) }
+    // Pin: once the heading and the whole deck are on screen, the section holds still for a short scroll
+    // while the deck opens (CSS sticky, so the browser does the holding with no extra work), then moves on.
+    const wr = wrapEl.current!, pn = pinEl.current!, sp = wr.querySelector('.orbit-pinspace') as HTMLElement
+    let pinPx = 1, pinTop = 0
+    const measure = () => { pinPx = Math.round(innerHeight * (innerWidth < 641 ? .5 : .46)); sp.style.height = pinPx + 'px'
+      // short screens: shrink the deck just enough that the heading and the whole deck fit together
+      // (very short screens, like a phone held sideways, fit the deck alone)
+      st.style.zoom = ''; const h0 = pn.offsetHeight, sh = st.offsetHeight, room = innerHeight - 16
+      if (h0 > room) { let f = (room - 26 - (h0 - sh)) / sh; if (f < (innerWidth > innerHeight ? .74 : .58)) f = Math.min(1, (room - 64) / sh); st.style.zoom = String(Math.max(.5, f).toFixed(3)) }
+      const h = pn.offsetHeight; pinTop = h <= innerHeight - 16 ? Math.round((innerHeight - h) / 2) : Math.round(innerHeight - h - 8); pn.style.top = pinTop + 'px' }
+    measure(); const ro = new ResizeObserver(measure); ro.observe(pn); addEventListener('resize', measure)
+    const fanP = () => Math.max(0, Math.min(1, (pinTop - wr.getBoundingClientRect().top) / pinPx))
     const ease = (k: number) => k * k * k * (k * (k * 6 - 15) + 10)
     const spring = (k: number) => { const t = ease(k); return t + Math.sin(Math.PI * t) * .06 * t }
     let forced = false
     // and on PC it tilts gently toward the pointer
-    let tx = 0, ty = 0, ptx = 0, pty = 0, lastFrame = 0
-    const glinted: boolean[] = [], flip: boolean[] = []
-    const layFan = () => { const P = forced ? 1 : fan, last = (n - 1) / 2
+    let tx = 0, ty = 0, ptx = 0, pty = 0, lastFrame = 0, lastF = 0
+    const glinted: boolean[] = [], flip: boolean[] = [], lastTf: string[] = []
+    const setTf = (el: HTMLElement, j: number, v: string) => { if (lastTf[j] !== v) { lastTf[j] = v; el.style.transform = v } }
+    const rise = st.querySelector('.orbit-rise') as HTMLElement | null
+    const layFan = () => { const P = forced ? 1 : fan, last = (n - 1) / 2, c = ease(Math.min(1, P / .85))
+      // camera: the deck starts a little further away and glides in to full size as it opens
+      if (rise) rise.style.transform = P >= 1 ? '' : `translate3d(0,${((1 - c) * 26).toFixed(1)}px,${(-(1 - c) * 150).toFixed(1)}px)`
       cards.forEach((el, j) => { const d = ((j * th + ang) % 360 + 540) % 360 - 180, k = Math.abs(d) / th, sg = Math.sign(d)
         // like opening a deck in your hand: the cards nearest the top leave first, fanning out in an arc
         // (pivoting near their bottom edge), lifting toward you, then settling into the ring with a soft spring
         const pk = Math.max(0, Math.min(1, (P - k / last * .34) / .66)), e = spring(pk), q = 1 - Math.min(1, e), arc = Math.sin(Math.PI * Math.min(1, pk))
         if (pk > .42 && !glinted[j]) { glinted[j] = true; flip[j] = !flip[j]; el.classList.remove('gl', 'gl2'); el.classList.add(flip[j] ? 'gl' : 'gl2') }
         if (pk < .12 && glinted[j]) glinted[j] = false
-        if (P >= 1) { el.style.transform = `rotateY(${j * th}deg) translate3d(0,0,${r}px)`; return }
-        el.style.transform = `rotateY(${(-ang + d * e).toFixed(2)}deg) translate3d(${(q * sg * k * 16).toFixed(1)}px,${(-q * k * 11 - arc * 20).toFixed(1)}px,${(r - q * k * 30 + arc * 42).toFixed(1)}px) rotateZ(${(q * sg * k * 2.4 + sg * Math.min(k, 3) * 5 * arc).toFixed(2)}deg)` }) }
+        if (P >= 1) { setTf(el, j, `rotateY(${j * th}deg) translate3d(0,0,${r}px)`); return }
+        setTf(el, j, `rotateY(${(-ang + d * e).toFixed(2)}deg) translate3d(${(q * sg * k * 16).toFixed(1)}px,${(-q * k * 11 - arc * 20).toFixed(1)}px,${(r - q * k * 30 + arc * 42).toFixed(1)}px) rotateZ(${(q * sg * k * 2.4 + sg * Math.min(k, 3) * 5 * arc).toFixed(2)}deg)`) }) }
     let shownI = -1
     const sync = () => { const i = front(); if (i === shownI) return; shownI = i
       g.querySelectorAll<HTMLElement>('.orbit-item').forEach((el, j) => { el.classList.toggle('on', j === i); el.setAttribute('aria-hidden', String(j !== i)) })
@@ -352,14 +366,20 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     const glide = (k: number) => -(Math.cos(Math.PI * k) - 1) / 2
     const out = (k: number) => 1 - Math.pow(1 - k, 3)
     const loop = (t: number) => { raf = 0
+      const tgt = forced ? 1 : fanP() // read layout first, before any writes this frame
       if (anim) { const k = Math.min(1, (t - anim.t0) / anim.dur); ang = anim.from + (anim.to - anim.from) * anim.ease(k); if (k >= 1) anim = null }
       const dtm = Math.min(50, t - (lastFrame || t)); lastFrame = t; const kf = 1 - Math.exp(-dtm / 140)
       tx += (ptx - tx) * kf; ty += (pty - ty) * kf
       const settling = Math.abs(ptx - tx) > .01 || Math.abs(pty - ty) > .01; if (!settling) lastFrame = 0
       apply(); sync()
-      const p = forced ? 1 : fanP(); if (p !== fan || (p < 1 && anim)) { fan = p; layFan() }
-      if (fan >= 1 && !started) { started = true; clearTimeout(autoT); autoStep(); autoT = window.setTimeout(auto, 1900) }
-      if (anim || settling) raf = requestAnimationFrame(loop) }
+      // the deck follows the scroll with a soft glide, so mouse-wheel steps turn into one silky motion
+      const df = Math.min(50, t - (lastF || t)); lastF = t
+      const prevFan = fan
+      if (fan < 0 || Math.abs(tgt - fan) < .0015) fan = tgt; else fan += (tgt - fan) * (1 - Math.exp(-df / 85))
+      const fanMoving = fan !== tgt; if (!fanMoving) lastF = 0
+      if (fan !== prevFan || (fan < 1 && anim)) layFan()
+      if (fan >= .9 && !started) { started = true; clearTimeout(autoT); autoStep(); autoT = window.setTimeout(auto, 1900) }
+      if (anim || settling || fanMoving) raf = requestAnimationFrame(loop) }
     const kick = () => { if (!raf) raf = requestAnimationFrame(loop) }
     const tween = (to: number, dur: number, ease = inOut) => { anim = { from: ang, to, t0: performance.now(), dur, ease }; kick() }
     const snapStop = (a: number) => Math.round(a / th) * th
@@ -368,7 +388,7 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     // autoplay: starts the moment the reveal completes and keeps turning; only an active drag
     // (or the tab being hidden) holds it, and it resumes 1.6s after the finger lifts
     let started = false
-    const autoStep = () => { if (fan < 1 || !vis || dragging || anim || document.hidden || performance.now() - lastUser < 1600) return; tween(snapStop(ang) - th, 1000, glide) }
+    const autoStep = () => { if (fan < .9 || !vis || dragging || anim || document.hidden || performance.now() - lastUser < 1600) return; tween(snapStop(ang) - th, 1000, glide) }
     const auto = () => { autoT = window.setTimeout(auto, 1900); if (started) autoStep() }
     autoT = window.setTimeout(auto, 1900)
     const onScr = () => { const b = st.getBoundingClientRect(); if (b.top < innerHeight * 1.05 && b.bottom > -innerHeight * .2) { vis = true
@@ -410,7 +430,7 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     const ric = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
     const wt = window.setTimeout(() => { if (ric) ric(warm); else warm() }, 1200)
     apply(); sync(); fan = fanP(); layFan(); onScr()
-    return () => { clearTimeout(wt); cancelAnimationFrame(raf); clearTimeout(autoT); io.disconnect(); removeEventListener('scroll', onScr); st.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); removeEventListener('pointercancel', pu); st.removeEventListener('click', click, true); st.removeEventListener('pointerenter', he); st.removeEventListener('pointerleave', hl); st.removeEventListener('pointermove', hm) }
+    return () => { clearTimeout(wt); cancelAnimationFrame(raf); clearTimeout(autoT); io.disconnect(); removeEventListener('scroll', onScr); st.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); removeEventListener('pointercancel', pu); st.removeEventListener('click', click, true); st.removeEventListener('pointerenter', he); st.removeEventListener('pointerleave', hl); st.removeEventListener('pointermove', hm); ro.disconnect(); removeEventListener('resize', measure) }
   }, [n, r, th])
   // the cards render once; the front-card highlight is switched directly, so turning never re-renders them
   const items = useMemo(() => children.map((c, j) => <div className="orbit-item" key={j} data-j={j} style={{ transform: `rotateY(${j * th}deg) translate3d(0,0,${r}px)` }}>
@@ -418,7 +438,7 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     <div className="orbit-back" aria-hidden="true"><Mark3 /></div>
   </div>), [children, r, th])
   const arrow = (d: string) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
-  return <div className="orbit">
+  return <div className="orbit" ref={wrapEl}><div className="orbit-pin" ref={pinEl}>
     <div className="head-row"><div>{head}</div>
       <div className="sc-ui"><span className="sc-count" aria-live="polite"><b key={idx}>{String(idx + 1).padStart(2, '0')}</b> / {String(n).padStart(2, '0')}</span>
         <div className="rail-ui"><button onClick={() => ctl.current?.go(-1)} aria-label="Previous bundle">{arrow('M15 5l-7 7 7 7')}</button><button onClick={() => ctl.current?.go(1)} aria-label="Next bundle">{arrow('M9 5l7 7-7 7')}</button></div></div></div>
@@ -434,5 +454,5 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
       </div>
     </div>
     <div className="orbit-dots" aria-hidden="true">{children.map((_, j) => <i key={j} className={j === idx ? 'on' : ''} />)}</div>
-  </div>
+  </div><div className="orbit-pinspace" aria-hidden="true" /></div>
 }
