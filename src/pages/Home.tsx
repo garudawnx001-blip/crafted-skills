@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ABOUT, AFFILIATE, ALL_SKILLS, BUNDLES, FAQ, FOUNDERS, HOME, SITE, TESTIMONIALS, WHO, WHY } from '../data/site'
 import { Count, GrowIn, Orbit, Parallax, Rail, ScrollWords, SplitH, Steps, TiltIn, useHeroScroll } from '../components/motion'
@@ -30,11 +30,19 @@ function Hero() {
       </div>
       <div className="pic">
         <div className="arch arch-in"><img src="img/about-main.webp" alt="A woman learning digital skills on her laptop at home" width="1195" height="991" fetchPriority="high" /></div>
-        <div className="lay"><div className="mini m1 he" style={d(700)}><small>My learning</small><b>Graphic Designing</b><div className="bar"><i /></div></div></div>
+        <div className="lay"><div className="mini m1 he" style={d(700)}><small>My learning</small><SkillTicker /><div className="bar"><i /></div></div></div>
         <div className="lay"><div className="mini m2 he" style={d(860)}><span className="k kn">ಕ</span><b>Learn in Kannada</b></div></div>
       </div>
     </div>
   </section>
+}
+
+/* hero card: cycles through every course skill, so it speaks for all bundles */
+function SkillTicker() {
+  const list = [...new Set(ALL_SKILLS)]
+  const [i, setI] = useState(0)
+  useEffect(() => { const t = setInterval(() => setI((x) => (x + 1) % list.length), 2200); return () => clearInterval(t) }, [list.length])
+  return <b className="tick-w"><span key={i}>{list[i]}</span></b>
 }
 
 function Marquee() {
