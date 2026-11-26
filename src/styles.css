@@ -722,3 +722,207 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 /* courses page: same premium carousel */
 .crs-show{margin-top:26px}.crs-show .head-row{align-items:center}
 .crs-show .sc-track{padding-top:6px}
+
+/* ===== v4: no gaps ===== */
+:root{--sec:clamp(30px,3.4vw,48px)}
+@media (max-width:640px){:root{--sec:28px}}
+/* PC carousel: three cards fill the row from the page edge, nothing empty beside them */
+.showcase.sc-start .sc-track{padding:16px var(--pad) 36px;scroll-padding-inline:var(--pad);gap:24px}
+.showcase.sc-start .sc-item{flex:0 0 calc((100% - 48px) / 3);scroll-snap-align:start;animation:none!important;opacity:1!important;transform:none!important}
+.showcase.sc-start .sc-item .bcard:after{opacity:0}
+.showcase.sc-start.sc-on .sc-item>.bcard:hover{transform:translate3d(0,-6px,0)}
+.showcase.sc-start .sc-item .bcard:hover:after{opacity:1}
+/* tablets: same compact hero as phones (photo band on top, text below) */
+@media (min-width:641px) and (max-width:1100px){
+  .pic{order:-1;width:100%;justify-self:stretch}
+  .arch{aspect-ratio:16/8;border-radius:32px}
+  .arch-in{clip-path:inset(100% 0 0 0 round 32px);animation-name:archInT}
+  .pic:before{border-radius:42px}
+  .arch img{object-position:50% 26%}
+  .m1{left:16px;bottom:16px}.m2{right:16px;top:16px}
+}
+@keyframes archInT{to{clip-path:inset(0 0 0 0 round 32px)}}
+
+/* founder pages */
+.fhero{padding:calc(76px + clamp(20px,4vw,48px)) 0 var(--sec);background:linear-gradient(180deg,var(--soft),#fff)}
+.fgrid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(28px,5vw,72px);align-items:start}
+.fphoto{position:sticky;top:96px}
+.fframe{border-radius:28px;overflow:hidden;aspect-ratio:4/5;background:var(--lav);box-shadow:var(--sh2);clip-path:inset(0 0 100% 0 round 28px);animation:fIn 1.1s cubic-bezier(.7,0,.2,1) .1s both}
+.fframe img{width:100%;height:100%;object-fit:cover;object-position:50% 12%;transform:scale(1.12);animation:imgIn 1.6s cubic-bezier(.16,1,.3,1) .1s both}
+@keyframes fIn{to{clip-path:inset(0 0 0 0 round 28px)}}
+.fbadge{position:absolute;left:18px;bottom:18px;display:flex;gap:12px;align-items:center;background:#fff;border-radius:16px;padding:10px 16px 10px 12px;box-shadow:var(--sh2);border:1px solid var(--line);animation:heIn .9s cubic-bezier(.16,1,.3,1) .8s both;opacity:0;transform:translateY(16px)}
+.fbadge .bm{width:30px;height:32px}.fbadge b{display:block;color:var(--indigo);font-size:15px}.fbadge span{font-size:12.5px;color:var(--dim)}
+.fcopy .crumbs{margin-bottom:18px}.fcopy .crumbs a{color:var(--violet)}
+.fplace{display:flex;gap:8px;align-items:center;color:var(--dim);margin-top:12px;font-size:15.5px}
+.fbio{margin-top:22px;display:grid;gap:14px}.fbio p{color:var(--muted);font-size:16.5px;line-height:1.75}.fbio p.lead{color:var(--text)}
+.fcopy .ctas{margin-top:26px}
+.fnext{display:grid;grid-template-columns:84px 1fr auto;gap:18px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:24px;padding:14px 22px 14px 14px;max-width:620px;margin:0 auto;transition:transform .3s,box-shadow .3s}
+.fnext:hover{transform:translateY(-3px);box-shadow:var(--sh2)}
+.fnext img{width:84px;height:84px;border-radius:18px;object-fit:cover;object-position:50% 12%}
+.fnext b{display:block;font:400 28px var(--display);color:var(--ink);margin:2px 0}.fnext .arr{font-size:26px;color:var(--violet)}
+@media (max-width:900px){.fgrid{grid-template-columns:1fr}.fphoto{position:relative;top:0;max-width:460px;width:100%;margin:0 auto}.fframe{aspect-ratio:4/4.4}}
+@media (max-width:640px){.fhero{padding-top:84px}.fbio p{font-size:15.5px}.fnext{grid-template-columns:64px 1fr auto;padding:12px 16px 12px 12px}.fnext img{width:64px;height:64px}.fnext b{font-size:22px}}
+@media (prefers-reduced-motion:reduce){.fframe,.fframe img,.fbadge{animation:none;clip-path:none;transform:none;opacity:1}}
+
+/* scroll deck (home courses) */
+.deck{--cw:min(400px,80vw);--gap:clamp(12px,2vw,26px);--dist:calc((var(--n) - 1) * (var(--cw) + var(--gap)));height:calc(100svh + var(--dist));position:relative;view-timeline:--deck block}
+.deck-pin{position:sticky;top:0;height:100svh;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:clamp(14px,2.4vh,26px);padding-top:clamp(64px,9vh,84px)}
+.deck-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;width:100%}
+.deck-head .lead{margin-top:8px}
+.deck-ui{display:flex;flex-direction:column;align-items:flex-end;gap:12px;flex:none}
+.deck-prog{width:220px;margin:0}
+.deck-track{display:flex;gap:var(--gap);padding-inline:calc(50% - var(--cw) / 2);will-change:transform}
+.deck-item{flex:0 0 var(--cw);transform-origin:50% 70%;will-change:transform,opacity}
+.deck-item .bcard{box-shadow:0 2px 6px rgba(40,10,90,.06),0 40px 80px -44px rgba(50,1,130,.5)}
+.deck-sd .deck-track{animation:deckX linear both;animation-timeline:--deck;animation-range:contain 0% contain 100%}
+.deck-sd .deck-item{animation-duration:auto;animation-timing-function:linear;animation-fill-mode:both;animation-timeline:--deck;animation-range:contain 0% contain 100%}
+.deck-sd .deck-prog span{animation:sprog linear both;animation-timeline:--deck;animation-range:contain 0% contain 100%}
+@keyframes deckX{to{transform:translate3d(calc(-1 * var(--dist)),0,0)}}
+/* PC: heading on the left, the spotlight sits right of it; passed cards fade out under the heading */
+.deck{background:var(--soft)}
+@media (min-width:1000px){
+  .deck{--cw:min(420px,29vw)}
+  .deck-pin{padding-top:76px}
+  .deck-head{position:absolute;left:0;right:0;top:calc(50% + 38px);transform:translateY(-50%);z-index:3;flex-direction:column;align-items:flex-start;gap:22px;pointer-events:none}
+  .deck-head>*{pointer-events:auto}
+  .deck-copy,.deck-ui{max-width:min(36%,440px)}
+  .deck-ui{align-items:flex-start}
+  .deck-pin:after{content:"";position:absolute;inset:0 auto 0 0;width:max(40%,calc((100% - var(--max)) / 2 + var(--max) * .38));background:linear-gradient(90deg,var(--soft) 80%,rgba(250,247,255,0));z-index:2;pointer-events:none}
+  .deck-track{padding-left:max(42%,calc((100% - var(--max)) / 2 + var(--max) * .42));padding-right:0}
+  .deck-sd .deck-item{animation-name:var(--pc-anim)!important}
+}
+@media (max-width:999px){.deck-head{flex-direction:column;align-items:flex-start;gap:12px}.deck-ui{flex-direction:row;align-items:center;gap:16px}.deck-prog{width:140px}.deck-copy .lead{display:none}}
+
+@media (max-width:999px){.deck-ui .btn{display:none}.deck-more{display:flex;justify-content:center;padding:18px 0 4px;background:var(--soft)}}
+@media (min-width:1000px){.deck-more{display:none}}
+
+/* dashboard polish */
+.main>*{animation:dashIn .7s cubic-bezier(.16,1,.3,1) both}
+.main>*:nth-child(2){animation-delay:.06s}.main>*:nth-child(3){animation-delay:.12s}.main>*:nth-child(4){animation-delay:.18s}.main>*:nth-child(5){animation-delay:.24s}.main>*:nth-child(n+6){animation-delay:.3s}
+@keyframes dashIn{from{opacity:0;transform:translate3d(0,16px,0)}}
+.kpis>.kpi{animation:dashIn .7s cubic-bezier(.16,1,.3,1) both}.kpis>.kpi:nth-child(2){animation-delay:.07s}.kpis>.kpi:nth-child(3){animation-delay:.14s}.kpis>.kpi:nth-child(4){animation-delay:.21s}
+.kpi{transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s,border-color .3s;position:relative;overflow:hidden}
+.kpi:hover{transform:translateY(-3px);box-shadow:var(--sh1);border-color:var(--lav3)}
+.kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(var(--indigo),var(--vio2));opacity:.85}
+.panel{transition:box-shadow .3s}
+.panel:hover{box-shadow:0 18px 40px -30px rgba(50,1,130,.35)}
+.hello{position:relative;overflow:hidden;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;border-radius:24px;padding:clamp(22px,3vw,32px);margin-bottom:18px;color:#fff;
+  background:radial-gradient(120% 140% at 100% 0,#7c3aed 0,rgba(124,58,237,0) 55%),linear-gradient(135deg,#320182,#5b16b8)}
+.hello h1{font:400 clamp(28px,3.2vw,40px)/1.1 var(--display);margin:6px 0 6px;color:#fff}
+.hello p{color:rgba(255,255,255,.82);font-size:15px;max-width:40em}
+.hello-k{font-size:13.5px;color:#e9dcfd}
+.hello-mark{position:absolute;right:-30px;bottom:-40px;width:200px;height:210px;opacity:.12;pointer-events:none}
+.hello-mark .i,.hello-mark path{fill:#fff}
+.hello>div{position:relative;z-index:1}.hello .btn{position:relative;z-index:1}
+.side a{position:relative;transition:background .25s,color .25s}
+.side a.active:before{content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:3px;background:var(--indigo);animation:barIn .4s cubic-bezier(.16,1,.3,1) both;transform-origin:50% 50%}
+@media (max-width:640px){.hello{grid-template-columns:1fr}.hello .btn{justify-self:start}}
+@media (prefers-reduced-motion:reduce){.main>*,.kpis>.kpi{animation:none}}
+
+/* auth: roomier form, art never clipped */
+.auth{grid-template-columns:minmax(0,5fr) minmax(0,6fr)}
+.auth-card{max-width:500px}
+.auth-art .q{font-size:clamp(28px,2.9vw,46px)}
+.auth-box{padding:48px clamp(24px,5vw,72px) 40px}
+@media (max-width:1100px){
+  .auth{grid-template-columns:1fr}
+  .auth-art{position:relative;height:auto;min-height:0;padding:22px var(--pad) 26px;flex-direction:row;align-items:center;gap:18px;flex-wrap:wrap}
+  .auth-art>div{display:none}.auth-art figure{display:none}
+  .auth-art .brand{flex:1}
+  .auth-art:after{content:"Learn in Kannada. Grow with Skills.";font-family:var(--display);font-size:20px;color:#e9dcfd}
+  .auth-mbrand{display:none!important}
+  .auth-box{align-items:flex-start;padding-top:32px}
+  .auth-card{max-width:560px}
+}
+@media (max-width:640px){.auth-art{display:flex}.auth-art:after{font-size:16px;width:100%}}
+
+/* deck cards float: 3D flight between positions + a gentle hover drift */
+.deck-track{perspective:1500px;perspective-origin:50% 40%;transform-style:preserve-3d}
+.deck-item{transform-style:preserve-3d;backface-visibility:hidden}
+.deck-item>.bcard{animation:dkFloat 6.5s ease-in-out infinite;animation-delay:calc(var(--j) * -.9s)}
+@keyframes dkFloat{0%,100%{translate:0 0;rotate:0deg}50%{translate:0 -12px;rotate:-.6deg}}
+@media (prefers-reduced-motion:reduce){.deck-item>.bcard{animation:none}}
+
+/* ===== v5: floating 3D course cards (no pinning) ===== */
+.sc-float .sc-track{padding-top:26px;padding-bottom:52px}
+@supports (animation-timeline:view()){
+  .css-sd.sc-float .sc-item{animation-name:scFly}
+}
+@keyframes scFly{
+  0%,18%{transform:perspective(1300px) translate3d(0,44px,-170px) rotateY(-32deg) scale(.84);opacity:.4}
+  50%{transform:perspective(1300px) translate3d(0,0,0) rotateY(0deg) scale(1);opacity:1}
+  82%,100%{transform:perspective(1300px) translate3d(0,44px,-170px) rotateY(32deg) scale(.84);opacity:.4}}
+.sc-float .sc-item>.bcard{animation:dkFloat 6.5s ease-in-out infinite;animation-delay:calc(var(--k) * -.9s)}
+.sc-float .sc-item.on>.bcard{box-shadow:0 2px 6px rgba(40,10,90,.06),0 60px 90px -46px rgba(50,1,130,.55)}
+@media (prefers-reduced-motion:reduce){.sc-float .sc-item>.bcard{animation:none}}
+
+/* ===== Apple-style zoom: the photo grows from a framed card to full screen, then the line appears.
+   GPU-only: transform + opacity (no clip-path or size changes), so it never repaints while scrolling. ===== */
+.zoom{position:relative;height:220vh;view-timeline:--zm block;background:#fff}
+.zoom-pin{position:sticky;top:0;height:100svh;overflow:hidden}
+.zoom-media{position:absolute;inset:0;border-radius:44px;overflow:hidden;transform:scale(.5);will-change:transform;backface-visibility:hidden;background:var(--lav)}
+.zoom-media img{width:100%;height:100%;object-fit:cover;object-position:68% 40%;transform:scale(1.3);will-change:transform}
+.zoom-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(26,2,70,0) 30%,rgba(26,2,70,.55) 62%,rgba(26,2,70,.88));opacity:0;will-change:opacity}
+.zoom-copy{position:absolute;left:0;right:0;bottom:clamp(40px,9vh,96px);color:#fff;opacity:0;transform:translate3d(0,40px,0);will-change:transform,opacity}
+.zoom-copy .kn{font:600 clamp(15px,1.4vw,19px) Kn;color:#e9dcfd}
+.zoom-copy h2{font:400 clamp(40px,6.4vw,92px)/1.02 var(--display);margin:10px 0 12px;color:#fff;letter-spacing:-.01em}
+.zoom-copy p{font-size:clamp(16px,1.4vw,20px);color:rgba(255,255,255,.86);margin-bottom:22px}
+@supports (animation-timeline:view()){
+  .zoom-media{animation:zmGrow linear both;animation-timeline:--zm;animation-range:contain 0% contain 58%}
+  .zoom-media img{animation:zmImg linear both;animation-timeline:--zm;animation-range:contain 0% contain 62%}
+  .zoom-shade{animation:zmFade linear both;animation-timeline:--zm;animation-range:contain 44% contain 70%}
+  .zoom-copy{animation:zmCopy linear both;animation-timeline:--zm;animation-range:contain 54% contain 80%}
+}
+/* ends slightly over-scaled so the rounded corners leave the screen: full bleed without animating the radius */
+@keyframes zmGrow{to{transform:scale(1.08)}}
+@keyframes zmImg{to{transform:scale(1)}}
+@keyframes zmFade{to{opacity:1}}
+@keyframes zmCopy{to{opacity:1;transform:none}}
+@media (max-width:640px){.zoom{height:200vh}.zoom-media{transform:scale(.62);border-radius:36px}.zoom-media img{object-position:74% 40%}}
+@supports not (animation-timeline:view()){
+  .zoom{height:auto}.zoom-pin{position:relative;height:78svh}.zoom-media{transform:none;border-radius:0}.zoom-media img{transform:none}.zoom-shade,.zoom-copy{opacity:1;transform:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .zoom{height:auto}.zoom-pin{position:relative;height:78svh}.zoom-media,.zoom-media img,.zoom-shade,.zoom-copy{animation:none!important}.zoom-media{transform:none;border-radius:0}.zoom-media img{transform:none}.zoom-shade,.zoom-copy{opacity:1;transform:none}
+}
+/* low-power devices: keep every scroll effect, drop the always-running ambient loops */
+.lite .hero:before,.lite .hero:after,.lite .arch-in img,.lite .mini.he,.lite .kchip i:after,.lite .sc-float .sc-item>.bcard,.lite .deck-item>.bcard{animation-iteration-count:1!important}
+.lite .sc-float .sc-item>.bcard,.lite .hero:before,.lite .hero:after{animation:none!important}
+.lite .sc-item .bcard,.lite .deck-item .bcard{box-shadow:0 10px 30px -18px rgba(50,1,130,.35)!important}
+
+.zoom-intro{position:absolute;left:0;right:0;top:calc(64px + 5vh);text-align:center;z-index:1;will-change:transform,opacity}
+.zoom-intro h2{font:400 clamp(30px,4vw,56px)/1.05 var(--display);color:var(--ink);margin-top:8px}
+@media (min-width:641px){.zoom-media{transform:scale(.5) translate3d(0,9%,0)}@keyframes zmGrow{to{transform:scale(1.08) translate3d(0,0,0)}}}
+@media (max-width:640px){.zoom-intro{top:calc(58px + 3vh)}.zoom-media{transform:scale(.62) translate3d(0,8%,0)}@keyframes zmGrow{to{transform:scale(1.08) translate3d(0,0,0)}}}
+@supports (animation-timeline:view()){.zoom-intro{animation:zmIntro linear both;animation-timeline:--zm;animation-range:contain 0% contain 30%}}
+@keyframes zmIntro{to{opacity:0;transform:translate3d(0,-40px,0) scale(.96)}}
+@supports not (animation-timeline:view()){.zoom-intro{display:none}}
+@media (prefers-reduced-motion:reduce){.zoom-intro{display:none}}
+
+/* ===== orbit: 3D ring of course cards ===== */
+.orbit{--ow:min(340px,74vw)}
+.orbit-stage{--ow:inherit;position:relative;height:calc(var(--oh,560px));perspective:1500px;perspective-origin:50% 38%;margin:8px calc(var(--pad) * -1) 0;overflow:hidden;touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none;
+  mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent)}
+.orbit-stage:active{cursor:grabbing}
+.orbit-ring{position:absolute;left:50%;top:26px;width:0;height:0;transform-style:preserve-3d;will-change:transform}
+.orbit-item{position:absolute;left:calc(var(--ow) / -2);top:0;width:var(--ow);backface-visibility:hidden;-webkit-backface-visibility:hidden;transform-style:preserve-3d}
+.orbit-item img{-webkit-user-drag:none}
+.orbit-item .bcard{transition:box-shadow .6s,filter .6s;filter:saturate(.75) brightness(.97)}
+.orbit-item.on .bcard{filter:none;box-shadow:0 2px 6px rgba(40,10,90,.06),0 60px 90px -46px rgba(50,1,130,.55)}
+.orbit-item .bcard:hover{transform:none}
+.orbit-dots{display:flex;gap:8px;justify-content:center;margin-top:4px}
+.orbit-dots i{width:7px;height:7px;border-radius:9px;background:var(--lav3);transition:width .4s cubic-bezier(.2,.8,.2,1),background .4s}
+.orbit-dots i.on{width:26px;background:linear-gradient(90deg,var(--indigo),var(--vio2))}
+@media (min-width:1000px){.orbit{--ow:360px}.orbit-stage{--oh:600px}}
+@media (max-width:640px){.orbit{--ow:min(300px,78vw)}.orbit-stage{--oh:540px;perspective:1100px}.orbit .sc-ui .rail-ui{display:none}}
+.lite .orbit-item .bcard{filter:none}
+
+/* admin login: its own look */
+.adm-link{color:inherit;opacity:.7;text-decoration:underline;text-underline-offset:3px}.adm-link:hover{opacity:1}
+.adm-badge{display:inline-flex;gap:8px;align-items:center;padding:7px 14px;border-radius:999px;background:var(--indigo);color:#fff;font-size:13px;font-weight:600;margin-bottom:14px}
+.auth-admin .auth-art{background:#1d0750}
+.auth-admin .auth-art:before{background:radial-gradient(60% 50% at 70% 30%,rgba(124,58,237,.55),transparent 70%)}
+.auth-admin .auth-box{background:linear-gradient(180deg,#faf7ff,#fff)}
+.auth-admin .auth-card{background:#fff;border:1px solid var(--line2);border-radius:28px;padding:clamp(24px,4vw,40px);box-shadow:0 40px 90px -50px rgba(50,1,130,.45)}
+
+.statement{padding:calc(var(--sec) * 1.5) 0}

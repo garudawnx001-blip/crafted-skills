@@ -4,13 +4,13 @@ import { HashRouter, Route, Routes, useLocation, useNavigate } from 'react-route
 import { flushSync } from 'react-dom'
 import { Footer, Header, WhatsAppFab, useReveal } from './components/ui'
 import Home from './pages/Home'
-import { About, Affiliate, BundleDetail, Contact, Courses, NotFound, Terms } from './pages/Public'
+import { About, Affiliate, BundleDetail, Contact, Courses, FounderPage, NotFound, Terms } from './pages/Public'
 import { Forgot, Login, Signup } from './pages/Auth'
 import Checkout from './pages/Checkout'
 import Dashboard from './pages/Dashboard'
 import { captureRef } from './lib/store'
 
-const APP = /^\/(dashboard|partner|studio|admin)(\/|$)/
+const APP = /^\/(dashboard|partner|studio|manage)(\/|$)/
 const AUTH = /^\/(login|signup|forgot)(\/|$)/
 
 try { history.scrollRestoration = 'manual' } catch { /* */ }
@@ -34,7 +34,7 @@ function Frame() {
       if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
       const a = (e.target as Element).closest?.('a'); if (!a || a.target || a.hasAttribute('download')) return
       const href = a.getAttribute('href'); if (!href || !href.startsWith('#/')) return
-      if (a.closest('.sc-item:not(.on)') || (a.closest('.sc-track') as HTMLElement | null)?.dataset.moved) return // carousel handles its own taps
+      if (a.closest('.showcase:not(.sc-start) .sc-item:not(.on)') || (a.closest('.sc-track') as HTMLElement | null)?.dataset.moved) return // carousel handles its own taps
       const to = href.slice(1), cur = location.hash.slice(1) || '/'
       if (to === cur) return
       e.preventDefault()
@@ -58,6 +58,7 @@ function Frame() {
     <div className="page" key={loc.pathname}><Routes location={loc}>
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
+      <Route path="/founders/:slug" element={<FounderPage />} />
       <Route path="/courses" element={<Courses />} />
       <Route path="/courses/:slug" element={<BundleDetail />} />
       <Route path="/affiliate" element={<Affiliate />} />
@@ -70,7 +71,7 @@ function Frame() {
       <Route path="/dashboard/*" element={<Dashboard />} />
       <Route path="/partner/*" element={<Dashboard />} />
       <Route path="/studio/*" element={<Dashboard />} />
-      <Route path="/admin/*" element={<Dashboard />} />
+      <Route path="/manage/*" element={<Dashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes></div>
     {!app && !auth && <Footer />}

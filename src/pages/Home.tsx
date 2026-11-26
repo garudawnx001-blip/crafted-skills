@@ -1,7 +1,7 @@
 import { Fragment, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ABOUT, AFFILIATE, ALL_SKILLS, BUNDLES, FAQ, FOUNDERS, HOME, SITE, TESTIMONIALS, WHO, WHY } from '../data/site'
-import { Count, GrowIn, Parallax, Rail, Showcase, ScrollWords, SplitH, Steps, TiltIn, useHeroScroll } from '../components/motion'
+import { Count, GrowIn, Orbit, Parallax, Rail, ScrollWords, SplitH, Steps, TiltIn, useHeroScroll } from '../components/motion'
 import { BundleCard, Icon, Mark, Seo } from '../components/ui'
 
 const d = (ms: number) => ({ ['--d' as string]: ms + 'ms' })
@@ -108,12 +108,21 @@ export default function Home() {
     <Hero />
     <Marquee />
 
+    <section className="zoom" aria-label="Learn in Kannada. Grow with Skills.">
+      <div className="zoom-pin">
+        <div className="zoom-intro"><span className="eyebrow">Crafted Skills</span><h2>Your journey starts here.</h2></div>
+        <div className="zoom-media"><img src="img/hero-collage.webp" alt="Women learning digital skills at home with Crafted Skills" loading="lazy" width="1200" height="800" /><div className="zoom-shade" /></div>
+        <div className="zoom-copy wrap"><span className="kn" lang="kn">{SITE.kannadaLine}</span><h2>Learn in Kannada.<br />Grow with Skills.</h2><p>Build Your Dreams from Home.</p>
+          <Link to="/courses" className="btn btn-w">Explore Our Courses</Link></div>
+      </div>
+    </section>
+
     <section className="sec tint">
       <div className="wrap">
-        <Showcase count={BUNDLES.length} head={<><span className="eyebrow">Course bundles</span><SplitH text="Explore Our Course Bundles" style={{ marginTop: 10 }} /><p className="lead">Learn practical digital skills in Kannada and take the next step toward your goals.</p></>}>
-          {BUNDLES.map((b, i) => <BundleCard key={b.slug} b={b} eager={i < 3} />)}
-        </Showcase>
-        <p className="center" style={{ marginTop: 22 }}><Link to="/courses" className="btn btn-g">Compare all {BUNDLES.length} bundles</Link></p>
+        <Orbit head={<><span className="eyebrow">Course bundles</span><SplitH text="Explore Our Course Bundles" style={{ marginTop: 10 }} /><p className="lead">Learn practical digital skills in Kannada and take the next step toward your goals.</p></>}>
+          {BUNDLES.map((b, i) => <BundleCard key={b.slug} b={b} eager={i < 4} />)}
+        </Orbit>
+        <p className="center" style={{ marginTop: 6 }}><Link to="/courses" className="btn btn-g">Compare all {BUNDLES.length} bundles</Link></p>
       </div>
     </section>
 
@@ -170,7 +179,7 @@ export default function Home() {
           <div className="ph para"><img src={f.photo} alt={`${f.name}, ${f.role} of Crafted Skills`} loading="lazy" width="720" height="1292" /></div>
           <div><span className="role">{f.role}</span><h3>{f.name}</h3><div className="pl">{f.place}</div>
             {(f.name === 'Rachana' ? [0, 1, 3] : [0, 3]).map((k) => <p key={k} style={{ marginTop: k ? 10 : 0 }}>{f.bio[k]}</p>)}
-            <p style={{ marginTop: 14 }}><Link to="/about" className="link">Read her story</Link></p></div>
+            <p style={{ marginTop: 14 }}><Link to={`/founders/${f.name.toLowerCase()}`} className="link">Read her full story →</Link></p></div>
         </Parallax>)}</div>
         <p className="center" style={{ marginTop: 28 }}><Link to="/contact" className="btn btn-g">Get in touch</Link></p>
       </div>

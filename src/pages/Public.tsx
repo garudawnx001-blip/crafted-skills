@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ABOUT, AFFILIATE, BUNDLES, CONTACT, FOUNDERS, HOME, SITE, TERMS, inr } from '../data/site'
-import { BundleCard, FbIcon, Icon, IgIcon, Seo, WaIcon, waLink } from '../components/ui'
+import { BundleCard, FbIcon, Icon, IgIcon, Mark, Seo, WaIcon, waLink } from '../components/ui'
 import { useMemo } from 'react'
 import { Showcase, SplitH } from '../components/motion'
 import { getProduct, ownsBundle, saveMessage, useStore } from '../lib/store'
@@ -30,7 +30,7 @@ export function About() {
       <div className="head center rv"><span className="eyebrow">The people behind Crafted Skills</span><h2 className="h2">Meet Our Founders</h2><p className="lead">A shared mission to make digital skills accessible to everyone, in Kannada.</p></div>
       <div className="founders">{FOUNDERS.map((f) => <article key={f.name} className="card fnd rv">
         <div className="ph"><img src={f.photo} alt={`${f.name}, ${f.role} of Crafted Skills`} loading="lazy" width="720" height="1292" /></div>
-        <div><span className="role">{f.role}</span><h3>{f.name}</h3><div className="pl">{f.place}</div>{f.bio.map((b) => <p key={b} style={{ marginBottom: 10 }}>{b}</p>)}</div>
+        <div><span className="role">{f.role}</span><h3>{f.name}</h3><div className="pl">{f.place}</div>{f.bio.slice(0, 2).map((b) => <p key={b} style={{ marginBottom: 10 }}>{b}</p>)}<Link to={`/founders/${f.name.toLowerCase()}`} className="link">Read her full story →</Link></div>
       </article>)}</div>
     </div></section>
     <section className="wrap"><div className="cta rv">
@@ -68,6 +68,31 @@ export function Courses() {
   </>
 }
 
+export function FounderPage() {
+  const { slug } = useParams()
+  const f = FOUNDERS.find((x) => x.name.toLowerCase() === slug)
+  if (!f) return <NotFound />
+  const other = FOUNDERS.find((x) => x !== f)!
+  return <>
+    <Seo title={`${f.name}, ${f.role} of Crafted Skills | Crafted Skills (CraftedSkills)`} desc={f.bio[0]} />
+    <section className="fhero"><div className="wrap fgrid">
+      <div className="fphoto"><div className="fframe"><img src={f.photo} alt={`${f.name}, ${f.role} of Crafted Skills`} width="720" height="1292" fetchPriority="high" /></div>
+        <div className="fbadge"><Mark className="bm" /><div><b>{f.role}</b><span>Crafted Skills</span></div></div></div>
+      <div className="fcopy">
+        <div className="crumbs"><Link to="/">Home</Link> / <Link to="/about">About us</Link> / {f.name}</div>
+        <span className="eyebrow">{f.role}</span>
+        <SplitH as="h1" className="h1" text={f.name} style={{ marginTop: 10 }} />
+        <div className="fplace"><Icon n="pin" s={18} />{f.place}</div>
+        <div className="fbio">{f.bio.map((b, i) => <p key={i} className={i === 0 ? 'lead' : ''}>{b}</p>)}</div>
+        <div className="ctas"><Link to="/courses" className="btn btn-p">Explore Our Courses</Link><a className="btn btn-g" href={waLink(`Hi ${f.name}, I would like to know more about Crafted Skills.`)} target="_blank" rel="noopener">Message on WhatsApp</a></div>
+      </div>
+    </div></section>
+    <section className="sec tint"><div className="wrap">
+      <Link to={`/founders/${other.name.toLowerCase()}`} className="fnext rv"><img src={other.photo} alt="" loading="lazy" /><div><span className="eyebrow">Meet the {other.role.toLowerCase()}</span><b>{other.name}</b><span className="dim">{other.place}</span></div><span className="arr">→</span></Link>
+    </div></section>
+  </>
+}
+
 export function BundleDetail() {
   const { slug = '' } = useParams(); const { user } = useStore()
   const b = getProduct(slug)
@@ -91,7 +116,7 @@ export function BundleDetail() {
         <div><h2>Courses in this bundle</h2><div className="curr">{b.courses.map((c, i) => <div className="row" key={c.name}><span className="n">{String(i + 1).padStart(2, '0')}</span><b>{c.name}</b><span className={`st ${c.status === 'Available now' ? 'live' : 'soon'}`}>{c.status}</span></div>)}</div>
           <p className="dim" style={{ marginTop: 12, fontSize: 14 }}>New courses unlock in your dashboard as soon as they're released.</p></div>
         <div><h2>This bundle includes</h2><div className="learn">{includes.map((x) => <div key={x}><Icon n="check" s={18} /><span>{x}</span></div>)}</div></div>
-        <div><h2>Your mentors</h2><div className="mentors">{FOUNDERS.map((f) => <Link to="/about" className="mentor" key={f.name}><img src={f.photo} alt={f.name} loading="lazy" /><div><b>{f.name}</b><span>{f.role} · {f.place}</span></div></Link>)}</div></div>
+        <div><h2>Your mentors</h2><div className="mentors">{FOUNDERS.map((f) => <Link to={`/founders/${f.name.toLowerCase()}`} className="mentor" key={f.name}><img src={f.photo} alt={f.name} loading="lazy" /><div><b>{f.name}</b><span>{f.role} · {f.place}</span></div></Link>)}</div></div>
         <div><h2>Refund policy</h2><div className="alert info">{TERMS.sections[1].list!.slice(0, 2).join(' ')} <Link to="/terms" className="link">Read terms</Link></div></div>
       </div>
       <aside className="buybox">

@@ -173,25 +173,35 @@ export function GrowIn({ children }: { children: ReactNode }) {
    JS only tracks which card is centred (for the counter + shadow), drag with momentum on PC,
    and a calm autoplay that pauses on hover and stops for good once the visitor takes over. */
 const CSS_SCROLL = typeof CSS !== 'undefined' && CSS.supports?.('animation-timeline: view()')
-export function Showcase({ head, children, count }: { head: ReactNode; children: ReactNode[]; count: number }) {
+export function Showcase({ head, children, count, float }: { head: ReactNode; children: ReactNode[]; count: number; float?: boolean }) {
   const track = useRef<HTMLDivElement>(null), bar = useRef<HTMLSpanElement>(null)
   const [idx, setIdx] = useState(0)
-  const touched = useRef(false), hover = useRef(false)
-  const centreOf = (i: number) => { const t = track.current!, c = t.children[i] as HTMLElement; return c.offsetLeft + c.offsetWidth / 2 - t.clientWidth / 2 }
-  const nearest = () => { const t = track.current!; let b = 0, bd = 1e9; for (let i = 0; i < t.children.length; i++) { const d = Math.abs(centreOf(i) - t.scrollLeft); if (d < bd) { bd = d; b = i } } return b }
-  const snapTo = (i: number) => { const t = track.current; if (!t) return; i = Math.max(0, Math.min(count - 1, i)); t.scrollTo({ left: centreOf(i), behavior: reduceMotion() ? 'auto' : 'smooth' }) }
+  const touched = useRef(0), hover = useRef(false)
+  // PC: cards line up from the left edge of the page (no empty space beside the first card).
+  // Phone/tablet: centre-focused with neighbours peeking.
+  const startQ = '(min-width: 1000px)'
+  const [start, setStart] = useState(() => !float && typeof matchMedia !== 'undefined' && matchMedia(startQ).matches)
+  useEffect(() => { if (float) return; const m = matchMedia(startQ); const f = () => setStart(m.matches); m.addEventListener('change', f); return () => m.removeEventListener('change', f) }, [float])
+  // floating mode opens on the middle card, so cards sit on both sides from the first frame
+  useEffect(() => { if (!float) return; const t = track.current; if (!t) return; const mid = Math.floor(count / 2); const c = t.children[mid] as HTMLElement; if (c) { t.scrollLeft = c.offsetLeft + c.offsetWidth / 2 - t.clientWidth / 2; setIdx(mid) } }, [float, count])
+  const pos = (i: number) => { const t = track.current!, c = t.children[i] as HTMLElement
+    return start ? c.offsetLeft - parseFloat(getComputedStyle(t).paddingLeft) : c.offsetLeft + c.offsetWidth / 2 - t.clientWidth / 2 }
+  const atEnd = () => { const t = track.current!; return start && t.scrollLeft >= t.scrollWidth - t.clientWidth - 4 }
+  const nearest = () => { const t = track.current!; let b = 0, bd = 1e9; for (let i = 0; i < t.children.length; i++) { const d = Math.abs(pos(i) - t.scrollLeft); if (d < bd) { bd = d; b = i } } return b }
+  const shown = () => atEnd() ? count - 1 : nearest()
+  const snapTo = (i: number) => { const t = track.current; if (!t) return; i = Math.max(0, Math.min(count - 1, i)); t.scrollTo({ left: Math.min(pos(i), t.scrollWidth - t.clientWidth), behavior: reduceMotion() ? 'auto' : 'smooth' }) }
   useEffect(() => {
     const t = track.current; if (!t) return
     const red = reduceMotion()
     let raf = 0
     const paint = () => { raf = 0
-      const n = nearest(); setIdx((p) => (p === n ? p : n))
-      if (!CSS_SCROLL) {
+      const n = shown(); setIdx((p) => (p === n ? p : n))
+      if (!CSS_SCROLL && !start) {
         if (bar.current) { const max = t.scrollWidth - t.clientWidth; bar.current.style.transform = `scaleX(${max > 0 ? Math.max(.08, t.scrollLeft / max) : 1})` }
         if (red) return
         for (let i = 0; i < t.children.length; i++) {
           const el = t.children[i] as HTMLElement, w = el.offsetWidth || 1
-          const f = Math.max(0, 1 - Math.abs(centreOf(i) - t.scrollLeft) / w * .7)
+          const f = Math.max(0, 1 - Math.abs(pos(i) - t.scrollLeft) / w * .7)
           el.style.transform = `translate3d(0,${((1 - f) * 22).toFixed(1)}px,0) scale(${(.88 + f * .12).toFixed(4)})`
           el.style.opacity = (.5 + f * .5).toFixed(3)
         }
@@ -201,7 +211,7 @@ export function Showcase({ head, children, count }: { head: ReactNode; children:
     paint(); t.addEventListener('scroll', on, { passive: true }); addEventListener('resize', on)
     // mouse drag with momentum: release direction + speed decides the next card
     let down = false, sx = 0, sl = 0, moved = 0, lx = 0, lt = 0, v = 0, start = 0
-    const pd = (e: PointerEvent) => { touched.current = true; delete t.dataset.moved; if (e.pointerType !== 'mouse' || e.button) return
+    const pd = (e: PointerEvent) => { touched.current = performance.now(); delete t.dataset.moved; if (e.pointerType !== 'mouse' || e.button) return
       down = true; moved = 0; sx = lx = e.clientX; lt = performance.now(); v = 0; sl = t.scrollLeft; start = nearest(); t.classList.add('dragging') }
     const pm = (e: PointerEvent) => { if (!down) return; const now = performance.now(), dx = e.clientX - sx
       moved = Math.max(moved, Math.abs(dx)); if (moved > 6) t.dataset.moved = '1'; t.scrollLeft = sl - dx
@@ -210,21 +220,21 @@ export function Showcase({ head, children, count }: { head: ReactNode; children:
       let n = nearest(); if (Math.abs(v) > .35 && n === start) n = start + (v < 0 ? 1 : -1); snapTo(n) }
     const click = (e: MouseEvent) => { if (moved > 6) { e.preventDefault(); e.stopPropagation(); moved = 0; return }
       const card = (e.target as HTMLElement).closest('.sc-item'); if (!card) return
-      const i = [...t.children].indexOf(card); if (i !== nearest()) { e.preventDefault(); e.stopPropagation(); touched.current = true; snapTo(i) } }
+      const i = [...t.children].indexOf(card); if (!start && i !== nearest()) { e.preventDefault(); e.stopPropagation(); touched.current = performance.now(); snapTo(i) } }
     const he = () => { hover.current = true }, hl = () => { hover.current = false }
     t.addEventListener('pointerdown', pd); addEventListener('pointermove', pm); addEventListener('pointerup', pu); t.addEventListener('click', click, true)
-    t.addEventListener('mouseenter', he); t.addEventListener('mouseleave', hl); t.addEventListener('wheel', () => { touched.current = true }, { passive: true })
+    t.addEventListener('mouseenter', he); t.addEventListener('mouseleave', hl); t.addEventListener('wheel', () => { touched.current = performance.now() }, { passive: true })
     // cards sweep in from the right the first time the carousel is seen; autoplay starts soon after
     let vis = false, auto = 0
-    const tick = () => { if (vis && !touched.current && !hover.current && !red && !document.hidden) { const n = nearest(); snapTo(n + 1 >= count ? 0 : n + 1) } auto = window.setTimeout(tick, 4600) }
+    const tick = () => { if (vis && performance.now() - touched.current > 4500 && !hover.current && !red && !document.hidden) { const n = nearest(); snapTo(atEnd() || n + 1 >= count ? 0 : n + 1) } auto = window.setTimeout(tick, float ? 3200 : 4600) }
     const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting
-      if (vis && !t.parentElement!.classList.contains('sc-on')) { t.parentElement!.classList.add('sc-on'); clearTimeout(auto); auto = window.setTimeout(tick, 2600) } }, { threshold: .35 })
+      if (vis && !t.parentElement!.classList.contains('sc-on')) { t.parentElement!.classList.add('sc-on'); clearTimeout(auto); auto = window.setTimeout(tick, float ? 1600 : 2600) } }, { threshold: .35 })
     io.observe(t)
     return () => { cancelAnimationFrame(raf); t.removeEventListener('scroll', on); removeEventListener('resize', on); t.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); t.removeEventListener('click', click, true); t.removeEventListener('mouseenter', he); t.removeEventListener('mouseleave', hl); io.disconnect(); clearTimeout(auto) }
-  }, [count])
-  const go = (d: number) => { touched.current = true; snapTo(nearest() + d) }
+  }, [count, start, float])
+  const go = (d: number) => { touched.current = performance.now(); snapTo(nearest() + d) }
   const arrow = (d: string) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
-  return <div className={`showcase ${CSS_SCROLL ? 'css-sd' : ''}`}>
+  return <div className={`showcase ${CSS_SCROLL ? 'css-sd' : ''} ${start ? 'sc-start' : ''} ${float ? 'sc-float' : ''}`}>
     <div className="head-row"><div>{head}</div>
       <div className="sc-ui"><span className="sc-count" aria-live="polite"><b key={idx}>{String(idx + 1).padStart(2, '0')}</b> / {String(count).padStart(2, '0')}</span>
         <div className="rail-ui"><button onClick={() => go(-1)} disabled={idx === 0} aria-label="Previous bundle">{arrow('M15 5l-7 7 7 7')}</button>
@@ -233,5 +243,132 @@ export function Showcase({ head, children, count }: { head: ReactNode; children:
       {children.map((c, i) => <div className={`sc-item ${i === idx ? 'on' : ''}`} key={i} style={{ ['--k' as string]: i }}>{c}</div>)}
     </div>
     <div className="sc-prog" aria-hidden="true"><span ref={bar} /></div>
+  </div>
+}
+
+/* Scroll deck: the section pins while you scroll and the course cards glide sideways, each card
+   lifting into focus as it reaches the spotlight. Driven by a CSS view-timeline on the compositor
+   (no JS per frame), so it stays smooth on phones. Fallback: one rAF loop. Reduced motion: plain carousel. */
+export function ScrollDeck({ head, children, after }: { head: ReactNode; children: ReactNode[]; after?: ReactNode }) {
+  const n = children.length
+  const sec = useRef<HTMLDivElement>(null), track = useRef<HTMLDivElement>(null), bar = useRef<HTMLSpanElement>(null)
+  const [idx, setIdx] = useState(0)
+  const red = reduceMotion()
+  const sd = typeof CSS !== 'undefined' && !!CSS.supports?.('animation-timeline: view()')
+  useEffect(() => {
+    if (red) return
+    const s = sec.current, t = track.current; if (!s || !t) return
+    let raf = 0
+    const run = () => { raf = 0
+      const r = s.getBoundingClientRect(), span = r.height - innerHeight
+      const k = Math.max(0, Math.min(1, span > 0 ? -r.top / span : 0))
+      const i = Math.round(k * (n - 1)); setIdx((p) => (p === i ? p : i))
+      if (!sd) { // fallback for browsers without scroll-driven animations
+        const items = [...t.children] as HTMLElement[]; if (items.length < 2) return
+        const step = items[1].offsetLeft - items[0].offsetLeft
+        t.style.transform = `translate3d(${(-k * step * (n - 1)).toFixed(1)}px,0,0)`
+        items.forEach((el, j) => { const f = Math.max(0, 1 - Math.abs(k * (n - 1) - j)); el.style.transform = `translate3d(0,${((1 - f) * 24).toFixed(1)}px,0) scale(${(.87 + .13 * f).toFixed(4)})`; el.style.opacity = (.45 + .55 * f).toFixed(3) })
+        if (bar.current) bar.current.style.transform = `scaleX(${Math.max(.06, k)})`
+      }
+    }
+    const on = () => { if (!raf) raf = requestAnimationFrame(run) }
+    run(); addEventListener('scroll', on, { passive: true }); addEventListener('resize', on)
+    return () => { removeEventListener('scroll', on); removeEventListener('resize', on); cancelAnimationFrame(raf) }
+  }, [n, red, sd])
+  if (red) return <><Showcase count={n} head={head}>{children}</Showcase>{after}</>
+  // per-card focus keyframes: card j peaks exactly when it reaches the spotlight
+  const h = 100 / (n - 1), S = 'transform:translate3d(40px,46px,-120px) rotateY(-24deg) rotateZ(2.5deg) scale(.86);opacity:.5', B = 'transform:translate3d(0,0,0) rotateY(0) rotateZ(0) scale(1);opacity:1', G = 'transform:translate3d(-110px,-40px,-160px) rotateY(32deg) rotateZ(-4deg) scale(.82);opacity:0'
+  const kf = (j: number, gone: boolean) => { const p = j * h, st = new Map<number, string>()
+    st.set(0, S); st.set(100, gone && p < 100 ? G : S)
+    if (p - h > 0) st.set(+(p - h).toFixed(3), S)
+    if (gone && p + h * .8 < 100) st.set(+(p + h * .8).toFixed(3), G)
+    else if (!gone && p + h < 100) st.set(+(p + h).toFixed(3), S)
+    st.set(+p.toFixed(3), B)
+    return [...st.entries()].sort((a, b) => a[0] - b[0]).map(([o, v]) => `${o}%{${v}}`).join('') }
+  const css = Array.from({ length: n }, (_, j) => `@keyframes dk${j}{${kf(j, false)}}@keyframes dkp${j}{${kf(j, true)}}`).join('')
+  return <div className={`deck ${sd ? 'deck-sd' : ''}`} ref={sec} style={{ ['--n' as string]: n }}>
+    <style>{css}</style>
+    <div className="deck-pin">
+      <div className="deck-head wrap"><div className="deck-copy">{head}</div>
+        <div className="deck-ui"><span className="sc-count" aria-live="polite"><b key={idx}>{String(idx + 1).padStart(2, '0')}</b> / {String(n).padStart(2, '0')}</span>
+          <div className="sc-prog deck-prog" aria-hidden="true"><span ref={bar} /></div>{after}</div></div>
+      <div className="deck-track" ref={track}>{children.map((c, j) => <div className="deck-item" key={j} style={{ ['--j' as string]: j, ['--pc-anim' as string]: `dkp${j}`, animationName: `dk${j}` }} data-j={j}>{c}</div>)}</div>
+    </div>
+  </div>
+}
+
+/* Orbit: the course cards sit around a 3D ring that turns by itself, pausing a moment on each card.
+   The turning is a Web Animation on transform only, so it runs on the graphics card (no main-thread work
+   per frame). Hover or touch pauses it; drag spins it; tapping a side card brings it to the front. */
+export function Orbit({ head, children }: { head: ReactNode; children: ReactNode[] }) {
+  const n = children.length
+  const stage = useRef<HTMLDivElement>(null), ring = useRef<HTMLDivElement>(null)
+  const anim = useRef<Animation | null>(null)
+  const [idx, setIdx] = useState(0), [r, setR] = useState(380)
+  const red = reduceMotion()
+  const STEP = 3000, DUR = n * STEP, th = 360 / n
+  // ring radius from the card width, so neighbours never overlap
+  useEffect(() => {
+    if (red) return
+    const f = () => { const el = stage.current; if (!el) return; const cw = (el.querySelector('.orbit-item') as HTMLElement | null)?.offsetWidth || 320
+      setR(Math.round(cw / 2 / Math.tan(Math.PI / n) + Math.min(60, cw * .16))) }
+    f(); addEventListener('resize', f); return () => removeEventListener('resize', f)
+  }, [n, red])
+  useEffect(() => {
+    if (red) return
+    const g = ring.current, st = stage.current; if (!g || !st) return
+    // hold on each card ~70% of the step, then glide to the next
+    const frames: Keyframe[] = []
+    for (let i = 0; i <= n; i++) {
+      const a = -i * th
+      frames.push({ offset: i / n, transform: `translate3d(0,0,${-r}px) rotateY(${a}deg)`, easing: 'linear' })
+      if (i < n) frames.push({ offset: (i + .7) / n, transform: `translate3d(0,0,${-r}px) rotateY(${a}deg)`, easing: 'cubic-bezier(.65,0,.35,1)' })
+    }
+    const prev = anim.current, t0 = prev ? Number(prev.currentTime) || 0 : 0; prev?.cancel()
+    const a = g.animate(frames, { duration: DUR, iterations: Infinity }); a.currentTime = t0; anim.current = a
+    const front = () => { const t = ((Number(a.currentTime) || 0) % DUR + DUR) % DUR; return Math.round(t / STEP) % n }
+    let paused = false, resumeT = 0, vis = true
+    const sync = () => { const i = front(); setIdx((p) => (p === i ? p : i)) }
+    const tick = window.setInterval(sync, 200)
+    const pause = () => { paused = true; clearTimeout(resumeT); a.pause() }
+    const resume = (ms = 2500) => { clearTimeout(resumeT); resumeT = window.setTimeout(() => { paused = false; if (vis) a.play() }, ms) }
+    const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting; if (!vis) a.pause(); else if (!paused) a.play() }, { threshold: .15 }); io.observe(st)
+    // drag to spin (mouse and touch); a tiny move is still a tap
+    let down = false, sx = 0, st0 = 0, moved = 0
+    const pd = (e: PointerEvent) => { down = true; moved = 0; sx = e.clientX; st0 = Number(a.currentTime) || 0; pause() }
+    const pm = (e: PointerEvent) => { if (!down) return; const dx = e.clientX - sx; moved = Math.max(moved, Math.abs(dx)); if (moved > 6) a.currentTime = st0 - dx * (STEP / (r * .9)) }
+    const pu = () => { if (!down) return; down = false
+      if (moved > 6) { const t = Number(a.currentTime) || 0; goTime(Math.round(t / STEP) * STEP) } resume(3000) }
+    let tw = 0
+    const goTime = (target: number) => { cancelAnimationFrame(tw); const from = Number(a.currentTime) || 0, t1 = performance.now()
+      const step = (now: number) => { const k = Math.min(1, (now - t1) / 650), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; a.currentTime = from + (target - from) * e; if (k < 1) tw = requestAnimationFrame(step) }
+      tw = requestAnimationFrame(step) }
+    const click = (e: MouseEvent) => { if (moved > 6) { e.preventDefault(); e.stopPropagation(); return }
+      const it = (e.target as HTMLElement).closest('.orbit-item') as HTMLElement | null; if (!it) return
+      const j = Number(it.dataset.j), cur = front(); if (j === cur) return
+      e.preventDefault(); e.stopPropagation(); pause()
+      let d = j - cur; if (d > n / 2) d -= n; if (d < -n / 2) d += n
+      goTime((Number(a.currentTime) || 0) - (((Number(a.currentTime) || 0) % STEP)) + d * STEP); resume(3500) }
+    const he = () => pause(), hl = () => { if (!down) resume(1200) }
+    st.addEventListener('pointerdown', pd); addEventListener('pointermove', pm); addEventListener('pointerup', pu); addEventListener('pointercancel', pu)
+    st.addEventListener('click', click, true); st.addEventListener('mouseenter', he); st.addEventListener('mouseleave', hl)
+    sync()
+    return () => { clearInterval(tick); clearTimeout(resumeT); cancelAnimationFrame(tw); io.disconnect(); st.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); removeEventListener('pointercancel', pu); st.removeEventListener('click', click, true); st.removeEventListener('mouseenter', he); st.removeEventListener('mouseleave', hl) }
+  }, [n, r, red, th, DUR])
+  const go = (d: number) => { const a = anim.current; if (!a) return; a.pause(); const t = Number(a.currentTime) || 0; const target = (Math.round(t / STEP) + d) * STEP
+    const from = t, t1 = performance.now(); const step = (now: number) => { const k = Math.min(1, (now - t1) / 650), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; a.currentTime = from + (target - from) * e; if (k < 1) requestAnimationFrame(step); else setTimeout(() => a.play(), 3000) }
+    requestAnimationFrame(step) }
+  if (red) return <Showcase count={n} head={head}>{children}</Showcase>
+  const arrow = (d: string) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
+  return <div className="orbit">
+    <div className="head-row"><div>{head}</div>
+      <div className="sc-ui"><span className="sc-count" aria-live="polite"><b key={idx}>{String(idx + 1).padStart(2, '0')}</b> / {String(n).padStart(2, '0')}</span>
+        <div className="rail-ui"><button onClick={() => go(-1)} aria-label="Previous bundle">{arrow('M15 5l-7 7 7 7')}</button><button onClick={() => go(1)} aria-label="Next bundle">{arrow('M9 5l7 7-7 7')}</button></div></div></div>
+    <div className="orbit-stage" ref={stage}>
+      <div className="orbit-ring" ref={ring} style={{ transform: `translate3d(0,0,${-r}px)` }}>
+        {children.map((c, j) => <div className={`orbit-item ${j === idx ? 'on' : ''}`} key={j} data-j={j} style={{ transform: `rotateY(${j * th}deg) translate3d(0,0,${r}px)` }} aria-hidden={j !== idx}>{c}</div>)}
+      </div>
+    </div>
+    <div className="orbit-dots" aria-hidden="true">{children.map((_, j) => <i key={j} className={j === idx ? 'on' : ''} />)}</div>
   </div>
 }

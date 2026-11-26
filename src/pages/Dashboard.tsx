@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { Link, Navigate, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { BUNDLES, SITE, inr, type Bundle } from '../data/site'
 import { Brand, Icon, Mark, PasswordInput, Seo, Toast, waLink } from '../components/ui'
+import { Count } from '../components/motion'
 import {
   addRole, affiliateStats, changePassword, deleteCourse, getProduct, leaderboard, logOut, requestRefund, resolveRefund,
   saveCourse, setCourseStatus, startCourse, completeCourse, saveNote, updateProfile, useStore, type SellerCourse, type User,
@@ -21,9 +22,9 @@ function navFor(u: User): { title: string; items: Item[] }[] {
   if (u.roles.includes('affiliate')) g.push({ title: 'Affiliate', items: [
     { to: '/partner', label: 'Earnings', icon: 'rupee', end: true }, { to: '/partner/links', label: 'My links', icon: 'link' },
     { to: '/partner/referrals', label: 'Referrals', icon: 'users' }, { to: '/partner/leaderboard', label: 'Leaderboard', icon: 'trophy' }, { to: '/partner/payouts', label: 'Payouts', icon: 'wallet' }] })
-  if (u.roles.includes('admin')) g.push({ title: 'Admin', items: [
-    { to: '/admin', label: 'Business', icon: 'grid', end: true }, { to: '/admin/orders', label: 'Orders & refunds', icon: 'receipt' },
-    { to: '/admin/people', label: 'Students & affiliates', icon: 'users' }, { to: '/admin/courses', label: 'Courses', icon: 'play' }, { to: '/admin/courses/new', label: 'Add a course', icon: 'idea' }, { to: '/admin/messages', label: 'Messages', icon: 'mail' }] })
+  if (u.roles.includes('admin')) g.push({ title: 'Manage', items: [
+    { to: '/manage', label: 'Business', icon: 'grid', end: true }, { to: '/manage/orders', label: 'Orders & refunds', icon: 'receipt' },
+    { to: '/manage/people', label: 'Students & affiliates', icon: 'users' }, { to: '/manage/courses', label: 'Courses', icon: 'play' }, { to: '/manage/courses/new', label: 'Add a course', icon: 'idea' }, { to: '/manage/messages', label: 'Messages', icon: 'mail' }] })
   g.push({ title: 'Account', items: [{ to: '/dashboard/profile', label: 'Profile & security', icon: 'cog' }] })
   return g
 }
@@ -56,7 +57,7 @@ function Shell({ user, children }: { user: User; children: ReactNode }) {
 
 const Top = ({ title, sub, right }: { title: ReactNode; sub?: ReactNode; right?: ReactNode }) => <div className="topbar"><div><h1>{title}</h1>{sub && <p>{sub}</p>}</div>{right}</div>
 const Empty = ({ icon, title, text, children }: { icon: string; title: string; text: string; children?: ReactNode }) => <div className="empty"><div className="ei"><Icon n={icon} /></div><h3>{title}</h3><p>{text}</p>{children && <div style={{ marginTop: 18, display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>{children}</div>}</div>
-const Kpi = ({ l, v, e }: { l: string; v: ReactNode; e?: ReactNode }) => <div className="kpi"><small>{l}</small><b>{v}</b>{e && <em>{e}</em>}</div>
+const Kpi = ({ l, v, e }: { l: string; v: ReactNode; e?: ReactNode }) => <div className="kpi"><small>{l}</small><b>{typeof v === 'number' ? <Count to={v} /> : v}</b>{e && <em>{e}</em>}</div>
 
 function useMine(u: User) {
   const { db } = useStore()
@@ -74,7 +75,10 @@ function Overview({ u }: { u: User }) {
   const { owned, orders } = useMine(u); const [q] = useSearchParams()
   const live = owned.flatMap((b) => b.courses.filter((c) => c.status === 'Available now'))
   return <>
-    <Top title={<>{q.get('welcome') ? 'Welcome' : 'Hi'}, {u.name.split(' ')[0]} 👋</>} sub={<span lang="kn" className="kn">{SITE.kannadaLine}</span>} right={<Link to="/courses" className="btn btn-p btn-sm">Browse bundles</Link>} />
+    <div className="hello"><Mark className="bm hello-mark" />
+      <div><span className="hello-k kn" lang="kn">{SITE.kannadaLine}</span><h1>{q.get('welcome') ? 'Welcome' : 'Hi'}, {u.name.split(' ')[0]} 👋</h1>
+        <p>{owned.length ? `You have ${owned.length} bundle${owned.length > 1 ? 's' : ''} and ${live.length} course${live.length === 1 ? '' : 's'} ready to learn.` : 'Your learning space is ready. Pick a bundle to unlock your first lessons.'}</p></div>
+      <Link to={owned.length ? '/dashboard/learning' : '/courses'} className="btn btn-w btn-sm">{owned.length ? 'Continue learning' : 'Browse bundles'}</Link></div>
     <div className="kpis" style={{ marginBottom: 18 }}>
       <Kpi l="My bundles" v={owned.length} /><Kpi l="Courses unlocked" v={owned.reduce((s, b) => s + b.courses.length, 0)} e={`${live.length} available now`} />
       <Kpi l="Started" v={u.started?.length || 0} /><Kpi l="Total invested" v={inr(orders.filter((o) => o.status !== 'refunded').reduce((s, o) => s + o.amount, 0))} />
@@ -301,22 +305,22 @@ function CourseList() {
     {list.map((c) => <tr key={c.id}><td><b>{c.title}</b><div className="dim" style={{ fontSize: 13 }}>{c.category}</div></td><td>{inr(c.price)}</td><td>{c.lessons.length}</td><td>{new Set(paid.filter((o) => o.bundle === 'c-' + c.id).map((o) => o.userId)).size}</td><td><span className={`badge ${stLabel[c.status][1]}`}>{stLabel[c.status][0]}</span></td>
       <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
         {c.status === 'published' ? <button className="link" onClick={() => { setCourseStatus(c.id, 'draft'); setToast('Course hidden from the website') }}>Unpublish</button> : <button className="link" onClick={() => { setCourseStatus(c.id, 'published'); setToast('Course is live') }}>Publish</button>}
-        <Link className="link" style={{ marginLeft: 14 }} to={`/admin/courses/edit/${c.id}`}>Edit</Link>{c.status === 'published' && <Link className="link" style={{ marginLeft: 14 }} to={`/courses/c-${c.id}`}>View</Link>}<DelBtn onYes={() => deleteCourse(c.id)} /></td></tr>)}
-  </tbody></table> : <Empty icon="play" title="Add your first course" text="Give it a title, price and lessons. Publish it and it shows on the Courses page."><Link to="/admin/courses/new" className="btn btn-p">Add a course</Link></Empty>}</div>
+        <Link className="link" style={{ marginLeft: 14 }} to={`/manage/courses/edit/${c.id}`}>Edit</Link>{c.status === 'published' && <Link className="link" style={{ marginLeft: 14 }} to={`/courses/c-${c.id}`}>View</Link>}<DelBtn onYes={() => deleteCourse(c.id)} /></td></tr>)}
+  </tbody></table> : <Empty icon="play" title="Add your first course" text="Give it a title, price and lessons. Publish it and it shows on the Courses page."><Link to="/manage/courses/new" className="btn btn-p">Add a course</Link></Empty>}</div>
   {toast && <Toast msg={toast} onDone={() => setToast('')} />}</>
 }
 function CourseEditor({ id }: { id?: string }) {
   const { db } = useStore(); const nav = useNavigate(); const ex = db.courses.find((c) => c.id === id)
   const [f, setF] = useState({ title: ex?.title || '', category: ex?.category || '', price: ex ? String(ex.price) : '', description: ex?.description || '' })
   const [lessons, setLessons] = useState(ex?.lessons.length ? ex.lessons : [{ title: '', url: '' }]); const [err, setErr] = useState('')
-  if (id && !ex) return <Navigate to="/admin/courses" replace />
+  if (id && !ex) return <Navigate to="/manage/courses" replace />
   const save = (status: SellerCourse['status']) => {
     setErr(''); const price = Number(f.price)
     if (f.title.trim().length < 4) return setErr('Give the course a clear title.')
     if (!price || price < 99) return setErr('Set a price of at least ₹99.')
     const ls = lessons.filter((l) => l.title.trim())
     if (status === 'published' && !ls.length) return setErr('Add at least one lesson before publishing.')
-    try { saveCourse({ id: ex?.id, title: f.title.trim(), category: f.category.trim() || 'General', price, description: f.description.trim(), lessons: ls, status }); nav('/admin/courses') } catch (y) { setErr((y as Error).message) }
+    try { saveCourse({ id: ex?.id, title: f.title.trim(), category: f.category.trim() || 'General', price, description: f.description.trim(), lessons: ls, status }); nav('/manage/courses') } catch (y) { setErr((y as Error).message) }
   }
   return <><Top title={ex ? 'Edit course' : 'Add a course'} sub="Published courses appear on the Courses page straight away." />
     {err && <div className="alert bad" style={{ marginBottom: 14 }}>{err}</div>}
@@ -350,12 +354,12 @@ function Admin({ sec, arg, id }: { sec: string; arg?: string; id?: string }) {
     <div className="panel tscroll">{db.users.length ? <table className="table"><thead><tr><th>Name</th><th>Contact</th><th>Roles</th><th>Joined</th><th>Referred by</th><th>Spent</th></tr></thead><tbody>
       {db.users.map((u) => <tr key={u.id}><td><b>{u.name}</b>{u.roles.includes('affiliate') && <div className="dim" style={{ fontSize: 12 }}>code {u.refCode}</div>}</td><td>{u.email}<div className="dim" style={{ fontSize: 12 }}>{u.phone}</div></td><td>{u.roles.join(', ')}</td><td>{fmtDate(u.createdAt)}</td><td>{u.referredBy || '—'}</td><td><b>{inr(paid.filter((o) => o.userId === u.id).reduce((a, o) => a + o.amount, 0))}</b></td></tr>)}
     </tbody></table> : <Empty icon="users" title="No accounts yet" text="Sign-ups appear here." />}</div></>
-  if (sec === 'courses') return arg === 'new' ? <CourseEditor /> : arg === 'edit' && id ? <CourseEditor key={id} id={id} /> : <><Top title="Courses" sub="Add, publish and edit the courses learners can buy." right={<Link to="/admin/courses/new" className="btn btn-p btn-sm">Add a course</Link>} /><CourseList /></>
+  if (sec === 'courses') return arg === 'new' ? <CourseEditor /> : arg === 'edit' && id ? <CourseEditor key={id} id={id} /> : <><Top title="Courses" sub="Add, publish and edit the courses learners can buy." right={<Link to="/manage/courses/new" className="btn btn-p btn-sm">Add a course</Link>} /><CourseList /></>
   if (sec === 'messages') return <><Top title="Messages" sub="From the contact form." />
     <div style={{ display: 'grid', gap: 12 }}>{db.messages.length ? [...db.messages].reverse().map((m, i) => <div key={i} className="panel"><div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}><b>{m.name} · <a className="link" href={`mailto:${m.email}`}>{m.email}</a></b><span className="dim">{fmtTime(m.at)}</span></div>{m.subject && <p style={{ marginTop: 6, fontWeight: 600 }}>{m.subject}</p>}<p className="muted" style={{ marginTop: 6 }}>{m.message}</p></div>) : <div className="panel"><Empty icon="mail" title="No messages" text="Contact form messages appear here." /></div>}</div></>
   const affs = db.users.filter((u) => u.roles.includes('affiliate'))
   const byBundle = BUNDLES.map((b) => ({ b, n: paid.filter((o) => o.bundle === b.slug).length })).sort((a, c) => c.n - a.n)
-  return <><Top title="Business overview" sub="Crafted Skills admin" />
+  return <><Top title="Business overview" sub="Crafted Skills" />
     <div className="kpis" style={{ marginBottom: 18 }}><Kpi l="Revenue" v={inr(rev)} e={`${paid.length} paid orders`} /><Kpi l="Students" v={db.users.length} /><Kpi l="Affiliates" v={affs.length} e={`${paid.filter((o) => o.refCode).length} referred sales`} /><Kpi l="Refund requests" v={db.orders.filter((o) => o.status === 'refund-requested').length} /></div>
     <div className="g2"><div className="panel"><h2>Bundles sold</h2><div style={{ display: 'grid', gap: 10 }}>{byBundle.map(({ b, n }) => <div key={b.slug}><div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}><span>{b.name}</span><b>{n}</b></div><div className="prog"><i style={{ width: (paid.length ? (n / paid.length) * 100 : 0) + '%' }} /></div></div>)}</div></div>
       <div className="panel"><h2>Top affiliates</h2>{leaderboard().length ? <table className="table"><tbody>{leaderboard().slice(0, 6).map((r) => <tr key={r.code}><td><b>{r.name}</b><div className="dim" style={{ fontSize: 12 }}>{r.code}</div></td><td>{r.sales} sales</td><td><b>{inr(r.value)}</b></td></tr>)}</tbody></table> : <Empty icon="trophy" title="No affiliates yet" text="Affiliate sign-ups appear here." />}</div></div></>
@@ -365,7 +369,7 @@ function Admin({ sec, arg, id }: { sec: string; arg?: string; id?: string }) {
 export default function Dashboard() {
   const { user } = useStore(); const loc = useLocation()
   useEffect(() => { window.scrollTo(0, 0) }, [loc.pathname])
-  if (!user) return <Navigate to={`/login?next=${encodeURIComponent(loc.pathname)}`} replace />
+  if (!user) return <Navigate to={loc.pathname.startsWith('/manage') ? '/login' : `/login?next=${encodeURIComponent(loc.pathname)}`} replace />
   const p = loc.pathname.split('/').filter(Boolean)
   const [area, sec = '', arg, arg2] = p
   let body: ReactNode = null, title = 'Dashboard'
@@ -377,10 +381,10 @@ export default function Dashboard() {
     title = 'Affiliate'
     body = sec === '' ? <Partner u={user} /> : sec === 'links' ? <Links u={user} /> : sec === 'referrals' ? <Referrals u={user} /> : sec === 'leaderboard' ? <Board u={user} /> : sec === 'payouts' ? <Payouts u={user} /> : <Navigate to="/partner" replace />
   } else if (area === 'studio') {
-    return <Navigate to={user.roles.includes('admin') ? '/admin/courses' : '/dashboard'} replace />
-  } else if (area === 'admin') {
+    return <Navigate to={user.roles.includes('admin') ? '/manage/courses' : '/dashboard'} replace />
+  } else if (area === 'manage') {
     if (!user.roles.includes('admin')) return <Navigate to="/dashboard" replace />
-    title = 'Admin'; body = <Admin sec={sec} arg={arg} id={arg2} />
+    title = 'Manage'; body = <Admin sec={sec} arg={arg} id={arg2} />
   }
   return <Shell user={user}><Seo title={`${title} | Crafted Skills`} />{body}</Shell>
 }

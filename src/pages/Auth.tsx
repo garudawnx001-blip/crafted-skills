@@ -8,7 +8,7 @@ const ROLES: { r: 'learner' | 'affiliate'; t: string; s: string }[] = [
   { r: 'learner', t: 'Learner', s: 'Buy & learn' },
   { r: 'affiliate', t: 'Affiliate', s: 'Share & earn' },
 ]
-export const homeFor = (u: User) => u.roles.includes('admin') ? '/admin' : u.roles.includes('affiliate') ? '/partner' : '/dashboard'
+export const homeFor = (u: User) => u.roles.includes('admin') ? '/manage' : u.roles.includes('affiliate') ? '/partner' : '/dashboard'
 const okEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim())
 
 function Art() {
@@ -27,7 +27,7 @@ function Art() {
 }
 
 function Seg({ role, set }: { role: string; set: (r: Exclude<Role, 'admin'>) => void }) {
-  return <div className="seg" role="tablist" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>{ROLES.map((x) => <button type="button" role="tab" aria-selected={role === x.r} key={x.r} className={role === x.r ? 'on' : ''} onClick={() => set(x.r)}>{x.t}<small>{x.s}</small></button>)}</div>
+  return <div className="seg" role="tablist" style={{ gridTemplateColumns: `repeat(${ROLES.length},1fr)` }}>{ROLES.map((x) => <button type="button" role="tab" aria-selected={role === x.r} key={x.r} className={role === x.r ? 'on' : ''} onClick={() => set(x.r)}>{x.t}<small>{x.s}</small></button>)}</div>
 }
 
 export function Login() {
@@ -44,7 +44,7 @@ export function Login() {
     <Seo title="Log in | Crafted Skills" />
     <Art />
     <div className="auth-box"><form className="auth-card form" onSubmit={submit} noValidate>
-      <div className="auth-mbrand"><Brand /></div><h1>Welcome back</h1><p className="muted">Log in to your learner or affiliate dashboard. Founders use the Crafted Skills admin email.</p>
+      <div className="auth-mbrand"><Brand /></div><h1>Welcome back</h1><p className="muted">Log in to your Crafted Skills account.</p>
       <div style={{ height: 10 }} />
       {err && <div className="alert bad" role="alert">{err}</div>}
       <div className="field"><label htmlFor="le">Email</label><input id="le" className="input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></div>
