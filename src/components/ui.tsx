@@ -56,7 +56,10 @@ export function useReveal() {
     if (!('IntersectionObserver' in window)) { const t = setInterval(() => document.querySelectorAll(REVEAL).forEach((e) => e.classList.add('in')), 300); return () => clearInterval(t) }
     const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } }), { rootMargin: '0px 0px -12% 0px', threshold: 0.01 })
     const seen = new WeakSet<Element>()
-    const scan = () => document.querySelectorAll<HTMLElement>(REVEAL).forEach((el) => {
+    // Chrome 146+: plain section reveals run as native scroll-triggered CSS animations (off the main thread)
+    const tt = typeof CSS !== 'undefined' && !!CSS.supports?.('timeline-trigger', '--t view() entry 20% exit 0%')
+    if (tt) document.documentElement.classList.add('tt')
+    const scan = () => document.querySelectorAll<HTMLElement>(tt ? REVEAL.replace('.rv:not(.in),', '') : REVEAL).forEach((el) => {
       if (seen.has(el)) return; seen.add(el)
       if (el.classList.contains('stg')) [...el.children].forEach((c, i) => (c as HTMLElement).style.setProperty('--i', String(Math.min(i, 8))))
       io.observe(el)
@@ -144,7 +147,7 @@ export function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
 
 export function BundleCard({ b, eager }: { b: Bundle; eager?: boolean }) {
   const live = b.courses.filter((c) => c.status === 'Available now').length
-  return <article className="bcard">
+  return <article className="bcard" data-slug={b.slug}>
     <Link to={`/courses/${b.slug}`} className="im" tabIndex={-1} aria-hidden="true"><img src={b.image} alt="" loading={eager ? 'eager' : 'lazy'} width="1200" height="391" draggable={false} /></Link>
     <div className="bd">
       <h3><Link to={`/courses/${b.slug}`}>{b.name}</Link></h3>

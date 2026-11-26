@@ -1,10 +1,14 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ABOUT, AFFILIATE, ALL_SKILLS, BUNDLES, FAQ, FOUNDERS, HOME, SITE, TESTIMONIALS, WHO, WHY } from '../data/site'
 import { Count, GrowIn, Parallax, Rail, Showcase, ScrollWords, SplitH, Steps, TiltIn, useHeroScroll } from '../components/motion'
 import { BundleCard, Icon, Mark, Seo } from '../components/ui'
 
 const d = (ms: number) => ({ ['--d' as string]: ms + 'ms' })
+/* headline words rise one by one from behind a mask */
+function Words({ text, start }: { text: string; start: number }) {
+  return <>{text.split(' ').map((w, i, a) => <Fragment key={i}><span className="hw"><span style={{ ['--i' as string]: start + i }}>{w}</span></span>{i < a.length - 1 ? ' ' : ''}</Fragment>)}</>
+}
 
 function Hero() {
   const [a, b] = HOME.heroTitle.split(' in Kannada ')
@@ -12,22 +16,22 @@ function Hero() {
     <div className="wrap hero-grid">
       <div className="hero-copy">
         <span className="kchip kn he" style={d(0)} lang="kn"><i />{SITE.kannadaLine}</span>
-        <h1 className="h1 he" style={d(80)}>{a} <em>in Kannada</em> {b}</h1>
+        <h1 className="h1 hero-h"><Words text={a} start={0} /> <em className="kmark"><Words text="in Kannada" start={a.split(' ').length} /><svg className="swoosh" viewBox="0 0 300 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength={1} d="M4 17C70 6 190 3 296 11" /></svg></em> <Words text={b} start={a.split(' ').length + 2} /></h1>
         <p className="lead he" style={d(180)}>{HOME.heroIntro}</p>
         <div className="ctas he" style={d(270)}>
           <Link to="/courses" className="btn btn-p">Explore Our Courses <svg className="arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 10h12M11 5l5 5-5 5" /></svg></Link>
           <Link to="/affiliate" className="btn btn-g">Become an Affiliate</Link>
         </div>
         <div className="facts he" style={d(360)}>
-          <div><b>{BUNDLES.length}</b><span>course bundles</span></div>
+          <div><b><Count to={BUNDLES.length} hero /></b><span>course bundles</span></div>
           <div><b className="kn" lang="kn">ಕನ್ನಡ</b><span>classes in Kannada</span></div>
-          <div><b>24 hr</b><span>refund policy</span></div>
+          <div><b><Count to={24} hero /> hr</b><span>refund policy</span></div>
         </div>
       </div>
       <div className="pic">
         <div className="arch arch-in"><img src="img/about-main.webp" alt="A woman learning digital skills on her laptop at home" width="1195" height="991" fetchPriority="high" /></div>
-        <div className="mini m1 he" style={d(700)}><small>My learning</small><b>Graphic Designing</b><div className="bar"><i /></div></div>
-        <div className="mini m2 he" style={d(820)}><span className="k kn">ಕ</span><b>Learn in Kannada</b></div>
+        <div className="lay"><div className="mini m1 he" style={d(700)}><small>My learning</small><b>Graphic Designing</b><div className="bar"><i /></div></div></div>
+        <div className="lay"><div className="mini m2 he" style={d(860)}><span className="k kn">ಕ</span><b>Learn in Kannada</b></div></div>
       </div>
     </div>
   </section>

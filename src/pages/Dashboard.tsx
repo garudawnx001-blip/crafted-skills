@@ -83,7 +83,7 @@ function Overview({ u }: { u: User }) {
       <div className="panel"><h2>This week</h2><p className="muted" style={{ fontSize: 14.5 }}>Learn a little every day. Days you learn light up.</p>
         <div className="week">{Array.from({ length: 7 }, (_, i) => { const dt = new Date(); dt.setDate(dt.getDate() - dt.getDay() + i); const k = dt.toISOString().slice(0, 10); return <span key={i} className={`${u.days?.includes(k) ? 'on' : ''} ${i === new Date().getDay() ? 'today' : ''}`}>{'SMTWTFS'[i]}</span> })}</div></div>
       <div className="panel" style={{ display: 'flex', gap: 18, alignItems: 'center' }}>{(() => { const total = owned.reduce((a, b) => a + b.courses.filter((c) => c.status === 'Available now').length, 0); const dn = (u.done || []).length; const v = total ? Math.round((dn / total) * 100) : 0
-        return <><div className="pring" style={{ background: `conic-gradient(var(--indigo) ${v}%, var(--lav) 0)` }}><b>{v}%</b></div><div><h2 style={{ marginBottom: 4 }}>Overall progress</h2><p className="muted" style={{ fontSize: 14.5 }}>{dn} of {total} available courses completed{dn ? ` · ${dn} certificate${dn > 1 ? 's' : ''} earned` : ''}.</p></div></> })()}</div>
+        return <><div className="pring" style={{ ['--pv' as string]: v, background: 'conic-gradient(var(--indigo) calc(var(--pv) * 1%), var(--lav) 0)' }}><b>{v}%</b></div><div><h2 style={{ marginBottom: 4 }}>Overall progress</h2><p className="muted" style={{ fontSize: 14.5 }}>{dn} of {total} available courses completed{dn ? ` · ${dn} certificate${dn > 1 ? 's' : ''} earned` : ''}.</p></div></> })()}</div>
     </div>
     {owned.length ? <div className="panel"><h2>Continue learning</h2><div style={{ display: 'grid', gap: 12 }}>{owned.map((b) => <BundleRow key={b.slug} u={u} b={b} />)}</div></div>
       : <div className="panel"><Empty icon="book" title="Your learning space is ready" text="Choose a course bundle to unlock your first Kannada lessons. They'll appear here right after payment."><Link to="/courses" className="btn btn-p">Explore Our Courses</Link><a className="btn btn-g" href={waLink('Hi Crafted Skills, please help me choose a bundle.')} target="_blank" rel="noopener">Ask which bundle fits</a></Empty></div>}
@@ -124,7 +124,7 @@ function Player({ u, slug }: { u: User; slug: string }) {
   const done = (n: string) => !!u.done?.some((d) => d.name === n)
   const p = progressOf(u, b)
   return <>
-    <Top title={b.name} sub={<Link to="/dashboard/learning" className="link">← My learning</Link>} right={<div style={{ display: 'flex', gap: 12, alignItems: 'center' }}><div className="pring" style={{ width: 52, height: 52, background: `conic-gradient(var(--indigo) ${p}%, var(--lav) 0)` }}><b style={{ width: 40, height: 40, fontSize: 12 }}>{p}%</b></div><span className="muted" style={{ fontSize: 14 }}>bundle progress</span></div>} />
+    <Top title={b.name} sub={<Link to="/dashboard/learning" className="link">← My learning</Link>} right={<div style={{ display: 'flex', gap: 12, alignItems: 'center' }}><div className="pring" style={{ width: 52, height: 52, ['--pv' as string]: p, background: 'conic-gradient(var(--indigo) calc(var(--pv) * 1%), var(--lav) 0)' }}><b style={{ width: 40, height: 40, fontSize: 12 }}>{p}%</b></div><span className="muted" style={{ fontSize: 14 }}>bundle progress</span></div>} />
     <div className="player">
       <div>
         <div className="screen"><div><Mark /><h3 className="h3">{c.name}</h3>

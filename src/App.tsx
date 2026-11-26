@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import Opening, { shouldOpen } from './components/Opening'
-import { HashRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { HashRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { flushSync } from 'react-dom'
 import { Footer, Header, WhatsAppFab, useReveal } from './components/ui'
 import Home from './pages/Home'
 import { About, Affiliate, BundleDetail, Contact, Courses, NotFound, Terms } from './pages/Public'
@@ -17,7 +18,7 @@ const OPEN_FIRST = shouldOpen()
 if (OPEN_FIRST) document.documentElement.classList.add('opening-on')
 
 function Frame() {
-  const loc = useLocation()
+  const loc = useLocation(); const navigate = useNavigate()
   const [opening, setOpening] = useState(OPEN_FIRST)
   const done = useCallback(() => setOpening(false), [])
   useReveal()
@@ -25,6 +26,26 @@ function Frame() {
     const ref = new URLSearchParams(loc.search).get('ref') || new URLSearchParams(window.location.search).get('ref')
     if (ref) captureRef(ref, loc.pathname)
   }, [loc.search, loc.pathname])
+  // page-to-page view transitions for every in-site link (Chrome, Edge, Safari 18+); others just navigate
+  useEffect(() => {
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } }
+    if (!doc.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      const a = (e.target as Element).closest?.('a'); if (!a || a.target || a.hasAttribute('download')) return
+      const href = a.getAttribute('href'); if (!href || !href.startsWith('#/')) return
+      if (a.closest('.sc-item:not(.on)') || (a.closest('.sc-track') as HTMLElement | null)?.dataset.moved) return // carousel handles its own taps
+      const to = href.slice(1), cur = location.hash.slice(1) || '/'
+      if (to === cur) return
+      e.preventDefault()
+      const img = /^\/courses\/[^/?]+/.test(to) && matchMedia('(min-width: 1101px)').matches ? a.closest('.bcard')?.querySelector<HTMLElement>('img') : null
+      if (img) img.style.viewTransitionName = 'bundle-art'
+      const h = document.documentElement; h.classList.add('vt-nav')
+      doc.startViewTransition(() => flushSync(() => navigate(to))).finished.finally(() => { if (img) img.style.viewTransitionName = ''; h.classList.remove('vt-nav') })
+    }
+    document.addEventListener('click', onClick, true)
+    return () => document.removeEventListener('click', onClick, true)
+  }, [navigate])
   // every page opens from the very top, before it paints
   useLayoutEffect(() => {
     const h = document.documentElement, prev = h.style.scrollBehavior

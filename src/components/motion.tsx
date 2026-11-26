@@ -81,19 +81,21 @@ export function Parallax({ children, className }: { children: ReactNode; classNa
 }
 
 /* Count-up when visible */
-export function Count({ to, prefix = '' }: { to: number; prefix?: string }) {
+export function Count({ to, prefix = '', hero }: { to: number; prefix?: string; hero?: boolean }) {
   const [v, setV] = useState(0); const ref = useRef<HTMLSpanElement>(null)
   useEffect(() => {
     const el = ref.current; if (!el) return
     if (reduceMotion()) { setV(to); return }
+    let raf = 0, tm = 0
     const io = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return; io.disconnect()
-      const t0 = performance.now(); const f = (t: number) => { const k = Math.min(1, (t - t0) / 1400); setV(Math.round(to * ease(k))); if (k < 1) requestAnimationFrame(f) }
-      requestAnimationFrame(f)
-    }, { threshold: 0.4 })
-    io.observe(el); return () => io.disconnect()
-  }, [to])
-  return <span ref={ref}>{prefix}{v.toLocaleString('en-IN')}</span>
+      const wait = hero ? (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hd')) || 0) * 1000 + 450 : 0
+      tm = window.setTimeout(() => { const t0 = performance.now(); const f = (t: number) => { const k = Math.min(1, (t - t0) / 1400); setV(Math.round(to * ease(k))); if (k < 1) raf = requestAnimationFrame(f) }; raf = requestAnimationFrame(f) }, wait)
+    }, { threshold: 0.2 })
+    io.observe(el)
+    return () => { io.disconnect(); clearTimeout(tm); cancelAnimationFrame(raf) }
+  }, [to, hero])
+  return <span ref={ref}>{prefix}{v}</span>
 }
 
 /* Native swipe rail: scroll-snap (smooth on every phone), arrows on PC, dots on phone. */
@@ -131,18 +133,32 @@ export function SplitH({ text, as = 'h2', className = 'h2', style }: { text: str
 /* Hero scroll-out + page progress bar: one passive rAF listener, transforms only. */
 export function useHeroScroll() {
   useEffect(() => {
-    if (reduceMotion()) return
-    const copy = document.querySelector<HTMLElement>('.hero-copy'), pic = document.querySelector<HTMLElement>('.pic'), bar = document.querySelector<HTMLElement>('.sprog')
+    const red = reduceMotion()
+    const sd = typeof CSS !== 'undefined' && !!CSS.supports?.('animation-timeline: scroll()')
+    const hero = document.querySelector<HTMLElement>('.hero'), pic = document.querySelector<HTMLElement>('.hero .pic'), bar = document.querySelector<HTMLElement>('.sprog')
+    const arch = document.querySelector<HTMLElement>('.hero .arch'), lays = [...document.querySelectorAll<HTMLElement>('.hero .lay')]
+    // scroll: native CSS scroll-driven animation where supported; this is only the fallback. The text never fades.
     let raf = 0
     const run = () => { raf = 0
-      const vh = innerHeight, y = scrollY, k = Math.min(1, y / (vh * .85))
-      if (copy && k <= 1) { copy.style.transform = `translate3d(0,${(-k * 70).toFixed(1)}px,0)`; copy.style.opacity = (1 - k * 0.9).toFixed(3) }
-      if (pic && k <= 1) pic.style.transform = `translate3d(0,${(k * 50).toFixed(1)}px,0) scale(${(1 - k * .07).toFixed(4)})`
-      if (bar) { const h = document.documentElement.scrollHeight - vh; bar.style.transform = `scaleX(${h > 0 ? (y / h).toFixed(4) : 0})` }
+      const vh = innerHeight, y = scrollY
+      if (!sd && !red && pic) { const k = Math.min(1, y / vh); pic.style.translate = `0 ${(k * (innerWidth < 900 ? 12 : 60)).toFixed(1)}px`; pic.style.scale = String(1 - k * .06) }
+      if (!sd && bar) { const h = document.documentElement.scrollHeight - vh; bar.style.transform = `scaleX(${h > 0 ? (y / h).toFixed(4) : 0})` }
     }
     const on = () => { if (!raf) raf = requestAnimationFrame(run) }
-    run(); addEventListener('scroll', on, { passive: true }); addEventListener('resize', on)
-    return () => { removeEventListener('scroll', on); removeEventListener('resize', on); cancelAnimationFrame(raf) }
+    if (!sd) { run(); addEventListener('scroll', on, { passive: true }); addEventListener('resize', on) }
+    // PC: the photo and the floating cards sit at different depths and follow the pointer softly
+    const fine = matchMedia('(hover:hover) and (pointer:fine)').matches
+    let tx = 0, ty = 0, cx = 0, cy = 0, praf = 0
+    const step = () => { praf = 0
+      cx += (tx - cx) * .07; cy += (ty - cy) * .07
+      if (arch) arch.style.transform = `translate3d(${(cx * -10).toFixed(2)}px,${(cy * -8).toFixed(2)}px,0)`
+      lays.forEach((l, i) => { l.style.transform = `translate3d(${(cx * (20 + i * 12)).toFixed(2)}px,${(cy * (16 + i * 10)).toFixed(2)}px,0)` })
+      if (Math.abs(tx - cx) + Math.abs(ty - cy) > .0008) praf = requestAnimationFrame(step)
+    }
+    const pm = (e: PointerEvent) => { if (!hero) return; const r = hero.getBoundingClientRect(); tx = e.clientX / r.width - .5; ty = (e.clientY - r.top) / r.height - .5; if (!praf) praf = requestAnimationFrame(step) }
+    const pl = () => { tx = 0; ty = 0; if (!praf) praf = requestAnimationFrame(step) }
+    if (fine && !red && hero) { hero.addEventListener('pointermove', pm); hero.addEventListener('pointerleave', pl) }
+    return () => { removeEventListener('scroll', on); removeEventListener('resize', on); cancelAnimationFrame(raf); cancelAnimationFrame(praf); hero?.removeEventListener('pointermove', pm); hero?.removeEventListener('pointerleave', pl) }
   }, [])
 }
 
@@ -185,10 +201,10 @@ export function Showcase({ head, children, count }: { head: ReactNode; children:
     paint(); t.addEventListener('scroll', on, { passive: true }); addEventListener('resize', on)
     // mouse drag with momentum: release direction + speed decides the next card
     let down = false, sx = 0, sl = 0, moved = 0, lx = 0, lt = 0, v = 0, start = 0
-    const pd = (e: PointerEvent) => { touched.current = true; if (e.pointerType !== 'mouse' || e.button) return
+    const pd = (e: PointerEvent) => { touched.current = true; delete t.dataset.moved; if (e.pointerType !== 'mouse' || e.button) return
       down = true; moved = 0; sx = lx = e.clientX; lt = performance.now(); v = 0; sl = t.scrollLeft; start = nearest(); t.classList.add('dragging') }
     const pm = (e: PointerEvent) => { if (!down) return; const now = performance.now(), dx = e.clientX - sx
-      moved = Math.max(moved, Math.abs(dx)); t.scrollLeft = sl - dx
+      moved = Math.max(moved, Math.abs(dx)); if (moved > 6) t.dataset.moved = '1'; t.scrollLeft = sl - dx
       const dt = now - lt; if (dt > 0) v = .8 * ((e.clientX - lx) / dt) + .2 * v; lx = e.clientX; lt = now }
     const pu = () => { if (!down) return; down = false; t.classList.remove('dragging')
       let n = nearest(); if (Math.abs(v) > .35 && n === start) n = start + (v < 0 ? 1 : -1); snapTo(n) }
@@ -198,9 +214,13 @@ export function Showcase({ head, children, count }: { head: ReactNode; children:
     const he = () => { hover.current = true }, hl = () => { hover.current = false }
     t.addEventListener('pointerdown', pd); addEventListener('pointermove', pm); addEventListener('pointerup', pu); t.addEventListener('click', click, true)
     t.addEventListener('mouseenter', he); t.addEventListener('mouseleave', hl); t.addEventListener('wheel', () => { touched.current = true }, { passive: true })
-    let vis = false; const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting }, { threshold: .6 }); io.observe(t)
-    const auto = setInterval(() => { if (vis && !touched.current && !hover.current && !red && !document.hidden) { const n = nearest(); snapTo(n + 1 >= count ? 0 : n + 1) } }, 5200)
-    return () => { cancelAnimationFrame(raf); t.removeEventListener('scroll', on); removeEventListener('resize', on); t.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); t.removeEventListener('click', click, true); t.removeEventListener('mouseenter', he); t.removeEventListener('mouseleave', hl); io.disconnect(); clearInterval(auto) }
+    // cards sweep in from the right the first time the carousel is seen; autoplay starts soon after
+    let vis = false, auto = 0
+    const tick = () => { if (vis && !touched.current && !hover.current && !red && !document.hidden) { const n = nearest(); snapTo(n + 1 >= count ? 0 : n + 1) } auto = window.setTimeout(tick, 4600) }
+    const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting
+      if (vis && !t.parentElement!.classList.contains('sc-on')) { t.parentElement!.classList.add('sc-on'); clearTimeout(auto); auto = window.setTimeout(tick, 2600) } }, { threshold: .35 })
+    io.observe(t)
+    return () => { cancelAnimationFrame(raf); t.removeEventListener('scroll', on); removeEventListener('resize', on); t.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); t.removeEventListener('click', click, true); t.removeEventListener('mouseenter', he); t.removeEventListener('mouseleave', hl); io.disconnect(); clearTimeout(auto) }
   }, [count])
   const go = (d: number) => { touched.current = true; snapTo(nearest() + d) }
   const arrow = (d: string) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
@@ -210,7 +230,7 @@ export function Showcase({ head, children, count }: { head: ReactNode; children:
         <div className="rail-ui"><button onClick={() => go(-1)} disabled={idx === 0} aria-label="Previous bundle">{arrow('M15 5l-7 7 7 7')}</button>
           <button onClick={() => go(1)} disabled={idx === count - 1} aria-label="Next bundle">{arrow('M9 5l7 7-7 7')}</button></div></div></div>
     <div className="sc-track" ref={track} tabIndex={0} aria-label="Course bundles" onKeyDown={(e) => { if (e.key === 'ArrowRight') { e.preventDefault(); go(1) } if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1) } }}>
-      {children.map((c, i) => <div className={`sc-item ${i === idx ? 'on' : ''}`} key={i}>{c}</div>)}
+      {children.map((c, i) => <div className={`sc-item ${i === idx ? 'on' : ''}`} key={i} style={{ ['--k' as string]: i }}>{c}</div>)}
     </div>
     <div className="sc-prog" aria-hidden="true"><span ref={bar} /></div>
   </div>

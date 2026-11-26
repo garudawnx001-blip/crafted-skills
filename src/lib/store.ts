@@ -35,7 +35,12 @@ function safeSet(k: string, v: string) { try { localStorage.setItem(k, v) } catc
 function safeDel(k: string) { try { localStorage.removeItem(k) } catch { /* */ } }
 
 let db: DB = (() => { try { return { ...empty, ...JSON.parse(safeGet(KEY) || '{}') } } catch { return { ...empty } } })()
-let session: string | null = safeGet(SKEY)
+// The login lives only in this browser tab (sessionStorage): opening the site link fresh is always logged out.
+const sGet = (k: string) => { try { return sessionStorage.getItem(k) } catch { return null } }
+const sSet = (k: string, v: string) => { try { sessionStorage.setItem(k, v) } catch { /* */ } }
+const sDel = (k: string) => { try { sessionStorage.removeItem(k) } catch { /* */ } }
+safeDel(SKEY) // drop the old always-logged-in session
+let session: string | null = sGet(SKEY)
 const subs = new Set<() => void>()
 let version = 0
 function commit() { safeSet(KEY, JSON.stringify(db)); version++; subs.forEach((f) => f()) }
@@ -73,15 +78,15 @@ export async function signUp(input: { name: string; email: string; phone: string
     refCode: makeRefCode(input.name), referredBy: ref && db.users.some((u) => u.refCode === ref) ? ref : undefined,
     createdAt: Date.now(), salt, hash: await hashPw(input.password, salt), started: [],
   }
-  db.users.push(user); session = user.id; safeSet(SKEY, user.id); commit()
+  db.users.push(user); session = user.id; sSet(SKEY, user.id); commit()
   return user
 }
 export async function logIn(emailIn: string, password: string) {
   const u = db.users.find((x) => x.email === normEmail(emailIn))
   if (!u || (await hashPw(password, u.salt)) !== u.hash) throw new Error('Email or password is incorrect.')
-  session = u.id; safeSet(SKEY, u.id); commit(); return u
+  session = u.id; sSet(SKEY, u.id); commit(); return u
 }
-export function logOut() { session = null; safeDel(SKEY); commit() }
+export function logOut() { session = null; sDel(SKEY); commit() }
 export function emailExists(e: string) { return db.users.some((u) => u.email === normEmail(e)) }
 export async function resetPassword(emailIn: string, newPw: string) {
   const u = db.users.find((x) => x.email === normEmail(emailIn)); if (!u) throw new Error('No account found with this email.')

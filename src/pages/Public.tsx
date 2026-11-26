@@ -1,3 +1,4 @@
+import { flushSync } from 'react-dom'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ABOUT, AFFILIATE, BUNDLES, CONTACT, FOUNDERS, HOME, SITE, TERMS, inr } from '../data/site'
@@ -44,6 +45,15 @@ export function About() {
 export function Courses() {
   const { db } = useStore()
   const [q, setQ] = useState(''); const [f, setF] = useState<'all' | 'live' | 'u5' | 'p5'>('all')
+  const pick = (k: typeof f) => {
+    if (k === f) return
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } }
+    if (!doc.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) { setF(k); return }
+    const cards = () => document.querySelectorAll<HTMLElement>('.bgrid .bcard')
+    cards().forEach((c) => { c.style.viewTransitionName = 'b-' + c.dataset.slug })
+    document.documentElement.classList.add('vt-filter')
+    doc.startViewTransition(() => flushSync(() => setF(k))).finished.finally(() => { cards().forEach((c) => { c.style.viewTransitionName = '' }); document.documentElement.classList.remove('vt-filter') })
+  }
   const trainer = db.courses.filter((c) => c.status === 'published').map((c) => getProduct('c-' + c.id)!).filter(Boolean)
   const list = useMemo(() => [...BUNDLES, ...trainer].filter((b) => {
     const t = q.trim().toLowerCase()
@@ -57,9 +67,9 @@ export function Courses() {
     <section className="sec tight" style={{ paddingTop: 8 }}><div className="wrap">
       <div className="toolbar">
         <label className="search"><Icon n="search" s={19} /><input className="input" placeholder="Search a skill, e.g. Graphic Designing" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search courses" /></label>
-        <div className="pills" role="group" aria-label="Filter">{([['all', 'All bundles'], ['live', 'Available now'], ['u5', 'Up to ₹5,999'], ['p5', 'Above ₹5,999']] as const).map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => setF(k)}>{l}</button>)}</div>
+        <div className="pills" role="group" aria-label="Filter">{([['all', 'All bundles'], ['live', 'Available now'], ['u5', 'Up to ₹5,999'], ['p5', 'Above ₹5,999']] as const).map(([k, l]) => <button key={k} className={f === k ? 'on' : ''} onClick={() => pick(k)}>{l}</button>)}</div>
       </div>
-      {list.length ? <div className="bgrid stg" key={q + f}>{list.map((b) => <BundleCard key={b.slug} b={b} />)}</div>
+      {list.length ? <div className="bgrid stg">{list.map((b) => <BundleCard key={b.slug} b={b} />)}</div>
         : <div className="panel"><div className="empty"><div className="ei"><Icon n="search" /></div><h3>No bundle matches “{q}”</h3><p>Try another skill, or ask us on WhatsApp which bundle fits you.</p></div></div>}
     </div></section>
     <section className="wrap"><div className="cta rv"><h2 className="h2">Not sure which bundle fits you?</h2><p className="lead" style={{ margin: '14px auto 0', maxWidth: '32em' }}>{CONTACT.text}</p>
