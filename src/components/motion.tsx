@@ -326,7 +326,7 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     // as the section scrolls in. Only the 7 card transforms change (compositor work), and only while scrolling.
     const cards = [...g.querySelectorAll<HTMLElement>('.orbit-item')]
     let fan = -1
-    const fanP = () => { const b = st.getBoundingClientRect(), s0 = innerHeight * .98, s1 = innerHeight * (innerWidth < 641 ? .3 : .38)
+    const fanP = () => { const b = st.getBoundingClientRect(), s0 = innerHeight * (innerWidth < 641 ? .72 : .66), s1 = innerHeight * (innerWidth < 641 ? .14 : .2)
       return Math.max(0, Math.min(1, (s0 - b.top) / (s0 - s1))) }
     const ease = (k: number) => k * k * k * (k * (k * 6 - 15) + 10)
     const layFan = () => { const e = ease(fan), q = 1 - e

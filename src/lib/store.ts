@@ -28,7 +28,10 @@ type DB = { users: User[]; orders: Order[]; clicks: Click[]; messages: Message[]
 const KEY = 'cs_db_v1', SKEY = 'cs_session', RKEY = 'cs_ref'
 const empty: DB = { users: [], orders: [], clicks: [], messages: [], courses: [] }
 // Preview only: accounts with these emails get the admin panel. In Supabase this is a server-side role.
-export const ADMIN_EMAILS = ['hello.craftedskills@gmail.com']
+export const ADMIN_EMAILS = ['hello.craftedskills@gmail.com', 'founder@craftedskills.in']
+// Preview-only founder account (dummy) so the founders can try the manage area on any device.
+// Remove when the real backend (Supabase) goes live.
+const DEMO_FOUNDER = { email: 'founder@craftedskills.in', password: 'Crafted@2026', name: 'Crafted Skills Founder', phone: '' }
 
 function safeGet(k: string) { try { return localStorage.getItem(k) } catch { return null } }
 function safeSet(k: string, v: string) { try { localStorage.setItem(k, v) } catch { /* storage blocked */ } }
@@ -82,6 +85,8 @@ export async function signUp(input: { name: string; email: string; phone: string
   return user
 }
 export async function logIn(emailIn: string, password: string) {
+  if (normEmail(emailIn) === DEMO_FOUNDER.email && password === DEMO_FOUNDER.password && !db.users.some((x) => x.email === DEMO_FOUNDER.email))
+    { const u = await signUp({ ...DEMO_FOUNDER, role: 'learner' }); return u }
   const u = db.users.find((x) => x.email === normEmail(emailIn))
   if (!u || (await hashPw(password, u.salt)) !== u.hash) throw new Error('Email or password is incorrect.')
   session = u.id; sSet(SKEY, u.id); commit(); return u
