@@ -998,3 +998,11 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 @keyframes obFloorG{from{transform:scaleX(.2);opacity:0}to{transform:none;opacity:1}}
 @media (max-width:640px){.orbit-aura{width:115vw;aspect-ratio:1.2}}
 .lite .orbit-aura{display:none}
+
+/* the heading is part of the reveal: it rises into focus just ahead of the ring */
+.orbit{timeline-scope:--orb}
+@supports (animation-timeline:view()){
+  .orbit .head-row>div:first-child{animation:obHead linear both;animation-timeline:--orb;animation-range:entry 0% entry 70%}
+}
+@keyframes obHead{from{opacity:0;transform:translate3d(0,46px,0) scale(.96)}to{opacity:1;transform:none}}
+.orbit .head-row>div:first-child{transform-origin:0 100%;will-change:transform,opacity}

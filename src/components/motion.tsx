@@ -338,12 +338,16 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     const snapStop = (a: number) => Math.round(a / th) * th
     const go = (d: number) => { lastUser = performance.now(); tween(snapStop(ang) - d * th, 1000) }
     ctl.current = { go }
-    // gentle autoplay: glide to the next card every few seconds while visible and untouched
-    const auto = () => { autoT = window.setTimeout(auto, 2300)
-      if (!vis || dragging || anim || document.hidden || performance.now() - lastUser < 3000) return
-      tween(snapStop(ang) - th, 1150, glide) }
-    autoT = window.setTimeout(auto, 1800)
-    const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting }, { threshold: .4 }); io.observe(st)
+    // autoplay: starts the moment the reveal completes and keeps turning; only an active drag
+    // (or the tab being hidden) holds it, and it resumes 1.6s after the finger lifts
+    let started = false
+    const autoStep = () => { if (!vis || dragging || anim || document.hidden || performance.now() - lastUser < 1600) return; tween(snapStop(ang) - th, 1100, glide) }
+    const auto = () => { autoT = window.setTimeout(auto, 2200); if (started) autoStep() }
+    autoT = window.setTimeout(auto, 2200)
+    const revealed = () => { const b = st.getBoundingClientRect(); return b.top + b.height * .5 <= innerHeight * .62 }
+    const onScr = () => { if (!started && revealed()) { started = true; autoStep() } }
+    addEventListener('scroll', onScr, { passive: true }); onScr()
+    const io = new IntersectionObserver(([e]) => { vis = e.isIntersecting }, { threshold: .15 }); io.observe(st)
     // swipe/drag: the ring follows the finger 1:1, then glides on with the flick and settles on a card
     const pxPerDeg = () => Math.max(2.2, (r * Math.PI * 2) / 360 * .9)
     const pd = (e: PointerEvent) => { dragging = true; horiz = false; moved = 0; sx = lastX = e.clientX; sy = e.clientY; lastT = performance.now(); vel = 0; sa = ang; anim = null; lastUser = performance.now() }
@@ -360,7 +364,7 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
       const it = (e.target as HTMLElement).closest('.orbit-item') as HTMLElement | null; if (!it) return
       const j = Number(it.dataset.j), cur = front(); if (j === cur) return
       e.preventDefault(); e.stopPropagation(); let d = j - cur; if (d > n / 2) d -= n; if (d < -n / 2) d += n; go(d) }
-    const he = (e: PointerEvent) => { if (e.pointerType === 'mouse') lastUser = performance.now() + 1e6 }, hl = (e: PointerEvent) => { if (e.pointerType === 'mouse') lastUser = performance.now() - 2500 }
+    const he = () => {}, hl = () => {}
     st.addEventListener('pointerdown', pd); addEventListener('pointermove', pm, { passive: true }); addEventListener('pointerup', pu); addEventListener('pointercancel', pu)
     st.addEventListener('click', click, true); st.addEventListener('pointerenter', he); st.addEventListener('pointerleave', hl)
     // decode every card image ahead of time (off the main thread), so nothing stalls when the ring arrives
@@ -375,7 +379,7 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     const ric = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
     const wt = window.setTimeout(() => { if (ric) ric(warm); else warm() }, 1200)
     apply(); sync()
-    return () => { clearTimeout(wt); cancelAnimationFrame(raf); clearTimeout(autoT); io.disconnect(); st.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); removeEventListener('pointercancel', pu); st.removeEventListener('click', click, true); st.removeEventListener('pointerenter', he); st.removeEventListener('pointerleave', hl) }
+    return () => { clearTimeout(wt); cancelAnimationFrame(raf); clearTimeout(autoT); io.disconnect(); removeEventListener('scroll', onScr); st.removeEventListener('pointerdown', pd); removeEventListener('pointermove', pm); removeEventListener('pointerup', pu); removeEventListener('pointercancel', pu); st.removeEventListener('click', click, true); st.removeEventListener('pointerenter', he); st.removeEventListener('pointerleave', hl) }
   }, [n, r, th])
   // the cards render once; the front-card highlight is switched directly, so turning never re-renders them
   const items = useMemo(() => children.map((c, j) => <div className="orbit-item" key={j} data-j={j} style={{ transform: `rotateY(${j * th}deg) translate3d(0,0,${r}px)` }}>
