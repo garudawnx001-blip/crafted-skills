@@ -1069,3 +1069,8 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .orbit-rise,.orbit-ring{pointer-events:none}
 .orbit-item{pointer-events:auto}
 .orbit-item:not(.on) .orbit-face a{pointer-events:none}
+/* WhatsApp button sits above the sticky Enroll bar on course pages */
+@media (max-width:1100px){
+  body:has(.mbuy) .wa{bottom:calc(96px + env(safe-area-inset-bottom));transition:bottom .3s ease}
+  body:has(.mbuy) .ftr{padding-bottom:110px}
+}
