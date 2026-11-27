@@ -1084,3 +1084,8 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 /* the course deck holds in place (sticky) while it opens */
 .orbit-pin{position:sticky;top:0}
 .orbit-sec .orbit-pin{padding-top:4px}
+.jump-p{display:flex;flex-direction:column;justify-content:space-between;gap:14px}
+.jump-a{display:flex;gap:10px;flex-wrap:wrap}
+.jump:has(> :only-child){grid-template-columns:1fr}
+/* phone tab strip: soft fade at the right edge shows there are more sections to swipe to */
+@media (max-width:1100px){.app-tabs{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);padding-right:44px}}

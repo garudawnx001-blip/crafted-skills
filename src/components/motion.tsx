@@ -329,26 +329,28 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     // Pin: once the heading and the whole deck are on screen, the section holds still for a short scroll
     // while the deck opens (CSS sticky, so the browser does the holding with no extra work), then moves on.
     const wr = wrapEl.current!, pn = pinEl.current!, sp = wr.querySelector('.orbit-pinspace') as HTMLElement
-    let pinPx = 1, pinTop = 0
+    let pinPx = 1, pinTop = 0, wrapTop = 0
     const measure = () => { pinPx = Math.round(innerHeight * (innerWidth < 641 ? .5 : .46)); sp.style.height = pinPx + 'px'
       // short screens: shrink the deck just enough that the heading and the whole deck fit together
       // (very short screens, like a phone held sideways, fit the deck alone)
       st.style.zoom = ''; const h0 = pn.offsetHeight, sh = st.offsetHeight, room = innerHeight - 16
       if (h0 > room) { let f = (room - 26 - (h0 - sh)) / sh; if (f < (innerWidth > innerHeight ? .74 : .58)) f = Math.min(1, (room - 64) / sh); st.style.zoom = String(Math.max(.5, f).toFixed(3)) }
-      const h = pn.offsetHeight; pinTop = h <= innerHeight - 16 ? Math.round((innerHeight - h) / 2) : Math.round(innerHeight - h - 8); pn.style.top = pinTop + 'px' }
-    measure(); const ro = new ResizeObserver(measure); ro.observe(pn); addEventListener('resize', measure)
-    const fanP = () => Math.max(0, Math.min(1, (pinTop - wr.getBoundingClientRect().top) / pinPx))
+      const h = pn.offsetHeight; pinTop = h <= innerHeight - 16 ? Math.round((innerHeight - h) / 2) : Math.round(innerHeight - h - 8); pn.style.top = pinTop + 'px'
+      wrapTop = wr.getBoundingClientRect().top + scrollY }
+    measure(); const ro = new ResizeObserver(measure); ro.observe(pn); ro.observe(document.body); addEventListener('resize', measure)
+    // progress straight from the scroll position: no layout read per frame
+    const fanP = () => Math.max(0, Math.min(1, (pinTop - (wrapTop - scrollY)) / (pinPx * .86))) // finishes inside the hold, leaving room for the glide
     const ease = (k: number) => k * k * k * (k * (k * 6 - 15) + 10)
     const spring = (k: number) => { const t = ease(k); return t + Math.sin(Math.PI * t) * .06 * t }
     let forced = false
     // and on PC it tilts gently toward the pointer
-    let tx = 0, ty = 0, ptx = 0, pty = 0, lastFrame = 0, lastF = 0
+    let tx = 0, ty = 0, ptx = 0, pty = 0, lastFrame = 0, lastF = 0, fv = 0
     const glinted: boolean[] = [], flip: boolean[] = [], lastTf: string[] = []
     const setTf = (el: HTMLElement, j: number, v: string) => { if (lastTf[j] !== v) { lastTf[j] = v; el.style.transform = v } }
     const rise = st.querySelector('.orbit-rise') as HTMLElement | null
-    const layFan = () => { const P = forced ? 1 : fan, last = (n - 1) / 2, c = ease(Math.min(1, P / .85))
+    const layFan = () => { const P = forced ? 1 : Math.max(0, Math.min(1, fan)), last = (n - 1) / 2, c = ease(Math.min(1, P / .85))
       // camera: the deck starts a little further away and glides in to full size as it opens
-      if (rise) rise.style.transform = P >= 1 ? '' : `translate3d(0,${((1 - c) * 26).toFixed(1)}px,${(-(1 - c) * 150).toFixed(1)}px)`
+      if (rise) rise.style.transform = P >= 1 ? '' : `translate3d(0,${((1 - c) * 26).toFixed(2)}px,${(-(1 - c) * 150).toFixed(2)}px)`
       cards.forEach((el, j) => { const d = ((j * th + ang) % 360 + 540) % 360 - 180, k = Math.abs(d) / th, sg = Math.sign(d)
         // like opening a deck in your hand: the cards nearest the top leave first, fanning out in an arc
         // (pivoting near their bottom edge), lifting toward you, then settling into the ring with a soft spring
@@ -356,7 +358,7 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
         if (pk > .42 && !glinted[j]) { glinted[j] = true; flip[j] = !flip[j]; el.classList.remove('gl', 'gl2'); el.classList.add(flip[j] ? 'gl' : 'gl2') }
         if (pk < .12 && glinted[j]) glinted[j] = false
         if (P >= 1) { setTf(el, j, `rotateY(${j * th}deg) translate3d(0,0,${r}px)`); return }
-        setTf(el, j, `rotateY(${(-ang + d * e).toFixed(2)}deg) translate3d(${(q * sg * k * 16).toFixed(1)}px,${(-q * k * 11 - arc * 20).toFixed(1)}px,${(r - q * k * 30 + arc * 42).toFixed(1)}px) rotateZ(${(q * sg * k * 2.4 + sg * Math.min(k, 3) * 5 * arc).toFixed(2)}deg)`) }) }
+        setTf(el, j, `rotateY(${(-ang + d * e).toFixed(3)}deg) translate3d(${(q * sg * k * 16).toFixed(2)}px,${(-q * k * 11 - arc * 20).toFixed(2)}px,${(r - q * k * 30 + arc * 42).toFixed(2)}px) rotateZ(${(q * sg * k * 2.4 + sg * Math.min(k, 3) * 5 * arc).toFixed(2)}deg)`) }) }
     let shownI = -1
     const sync = () => { const i = front(); if (i === shownI) return; shownI = i
       g.querySelectorAll<HTMLElement>('.orbit-item').forEach((el, j) => { el.classList.toggle('on', j === i); el.setAttribute('aria-hidden', String(j !== i)) })
@@ -373,9 +375,12 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
       const settling = Math.abs(ptx - tx) > .01 || Math.abs(pty - ty) > .01; if (!settling) lastFrame = 0
       apply(); sync()
       // the deck follows the scroll with a soft glide, so mouse-wheel steps turn into one silky motion
-      const df = Math.min(50, t - (lastF || t)); lastF = t
+      let df = Math.min(64, t - (lastF || t)); lastF = t
       const prevFan = fan
-      if (fan < 0 || Math.abs(tgt - fan) < .0015) fan = tgt; else fan += (tgt - fan) * (1 - Math.exp(-df / 85))
+      if (fan < 0) { fan = tgt; fv = 0 }
+      else { // critically damped spring: no jolt when you start or stop scrolling, up or down
+        const W = 15; while (df > 0) { const h = Math.min(8, df) / 1000; df -= 8; fv += (W * W * (tgt - fan) - 2 * W * fv) * h; fan += fv * h }
+        if (Math.abs(tgt - fan) < .0006 && Math.abs(fv) < .003) { fan = tgt; fv = 0 } }
       const fanMoving = fan !== tgt; if (!fanMoving) lastF = 0
       if (fan !== prevFan || (fan < 1 && anim)) layFan()
       if (fan >= .9 && !started) { started = true; clearTimeout(autoT); autoStep(); autoT = window.setTimeout(auto, 1900) }

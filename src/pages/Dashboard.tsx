@@ -10,6 +10,7 @@ import {
 
 const fmtDate = (t: number) => new Date(t).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 const fmtTime = (t: number) => new Date(t).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+const roleName = (r: string) => ({ admin: 'Founder', affiliate: 'Affiliate', learner: 'Learner' } as Record<string, string>)[r] || r
 const siteUrl = () => location.origin + location.pathname.replace(/index\.html$/, '')
 const refLink = (code: string, slug?: string) => `${siteUrl()}#/${slug ? 'courses/' + slug : ''}?ref=${code}`
 
@@ -30,7 +31,11 @@ function navFor(u: User): { title: string; items: Item[] }[] {
 }
 
 function Shell({ user, children }: { user: User; children: ReactNode }) {
-  const nav = useNavigate(); const groups = navFor(user)
+  const nav = useNavigate(); const groups = navFor(user); const loc = useLocation()
+  // phone tab strip: slide so the section you're on is always in view
+  useEffect(() => { const strip = document.querySelector<HTMLElement>('.app-tabs'), a = strip?.querySelector<HTMLElement>('a.on')
+    if (!strip || !a || strip.scrollWidth <= strip.clientWidth) return
+    strip.scrollTo({ left: a.offsetLeft - (strip.clientWidth - a.offsetWidth) / 2, behavior: 'smooth' }) }, [loc.pathname])
   return <div className="app">
     <aside className="side" aria-label="Dashboard">
       <Brand />
@@ -38,7 +43,7 @@ function Shell({ user, children }: { user: User; children: ReactNode }) {
         {groups.map((g) => <div key={g.title}><div className="sl">{g.title}</div>{g.items.map((i) => <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => isActive ? 'on' : ''}><Icon n={i.icon} />{i.label}</NavLink>)}</div>)}
         {!user.roles.includes('affiliate') && <><div className="sl">Earn</div><button className="it" onClick={() => { addRole('affiliate'); nav('/partner?welcome=1') }}><Icon n="rupee" />Become an affiliate</button></>}
       </div>
-      <div className="me"><span className="avatar">{user.name[0].toUpperCase()}</span><div style={{ minWidth: 0 }}><b>{user.name}</b><small>{user.roles.filter((r) => r !== 'learner').join(' · ') || 'Learner'}</small></div>
+      <div className="me"><span className="avatar">{user.name[0].toUpperCase()}</span><div style={{ minWidth: 0 }}><b>{user.name}</b><small>{user.roles.filter((r) => r !== 'learner').map(roleName).join(' · ') || 'Learner'}</small></div>
         <button aria-label="Log out" style={{ marginLeft: 'auto', color: 'var(--muted)' }} onClick={() => { logOut(); nav('/') }}><Icon n="logout" /></button></div>
     </aside>
     <div style={{ minWidth: 0 }}>
@@ -91,6 +96,12 @@ function Overview({ u }: { u: User }) {
     </div>
     {owned.length ? <div className="panel"><h2>Continue learning</h2><div style={{ display: 'grid', gap: 12 }}>{owned.map((b) => <BundleRow key={b.slug} u={u} b={b} />)}</div></div>
       : <div className="panel"><Empty icon="book" title="Your learning space is ready" text="Choose a course bundle to unlock your first Kannada lessons. They'll appear here right after payment."><Link to="/courses" className="btn btn-p">Explore Our Courses</Link><a className="btn btn-g" href={waLink('Hi Crafted Skills, please help me choose a bundle.')} target="_blank" rel="noopener">Ask which bundle fits</a></Empty></div>}
+    {(u.roles.includes('admin') || u.roles.includes('affiliate')) && <div className="g2 jump" style={{ gap: 18, marginTop: 18 }}>
+      {u.roles.includes('admin') && <div className="panel jump-p"><div><h2 style={{ marginBottom: 4 }}>Your business</h2><p className="muted">Orders, students, affiliates and your courses.</p></div>
+        <div className="jump-a"><Link to="/manage" className="btn btn-p btn-sm">Open business</Link><Link to="/manage/courses/new" className="btn btn-g btn-sm">Add a course</Link></div></div>}
+      {u.roles.includes('affiliate') && <div className="panel jump-p"><div><h2 style={{ marginBottom: 4 }}>Affiliate earnings</h2><p className="muted">Your links, clicks, sales and payouts.</p></div>
+        <div className="jump-a"><Link to="/partner" className="btn btn-p btn-sm">Open earnings</Link><Link to="/partner/links" className="btn btn-g btn-sm">My links</Link></div></div>}
+    </div>}
     {!u.roles.includes('affiliate') && <div className="panel" style={{ marginTop: 18, display: 'flex', gap: 18, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
       <div><h2 style={{ marginBottom: 4 }}>Recommend &amp; earn</h2><p className="muted">Recommend Crafted Skills and earn exciting commissions for every successful signup!</p></div>
       <AffBtn /></div>}
@@ -204,7 +215,7 @@ function Profile({ u }: { u: User }) {
         <div className="field"><label htmlFor="pw2">New password</label><PasswordInput id="pw2" value={pw.nw} onChange={(e) => setPw({ ...pw, nw: e.target.value })} autoComplete="new-password" /></div>
         <button className="btn btn-g">Update password</button>
         <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, marginTop: 6 }}><h2 style={{ marginBottom: 6 }}>Roles</h2><p className="muted" style={{ marginBottom: 12 }}>One account for learning, earning and teaching.</p>
-          <div className="chips">{u.roles.map((r) => <span className="chip live" key={r}>{r}</span>)}</div>
+          <div className="chips">{u.roles.map((r) => <span className="chip live" key={r}>{roleName(r)}</span>)}</div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>{!u.roles.includes('affiliate') && <button type="button" className="btn btn-g btn-sm" onClick={() => { addRole('affiliate'); setToast('Affiliate mode on') }}>Add affiliate</button>}</div></div>
       </form>
     </div>
@@ -352,7 +363,7 @@ function Admin({ sec, arg, id }: { sec: string; arg?: string; id?: string }) {
     </tbody></table> : <Empty icon="receipt" title="No orders yet" text="Orders appear here the moment a student pays." />}</div>{toast && <Toast msg={toast} onDone={() => setToast('')} />}</>
   if (sec === 'people') return <><Top title="Students & affiliates" sub={`${db.users.length} accounts`} />
     <div className="panel tscroll">{db.users.length ? <table className="table"><thead><tr><th>Name</th><th>Contact</th><th>Roles</th><th>Joined</th><th>Referred by</th><th>Spent</th></tr></thead><tbody>
-      {db.users.map((u) => <tr key={u.id}><td><b>{u.name}</b>{u.roles.includes('affiliate') && <div className="dim" style={{ fontSize: 12 }}>code {u.refCode}</div>}</td><td>{u.email}<div className="dim" style={{ fontSize: 12 }}>{u.phone}</div></td><td>{u.roles.join(', ')}</td><td>{fmtDate(u.createdAt)}</td><td>{u.referredBy || '—'}</td><td><b>{inr(paid.filter((o) => o.userId === u.id).reduce((a, o) => a + o.amount, 0))}</b></td></tr>)}
+      {db.users.map((u) => <tr key={u.id}><td><b>{u.name}</b>{u.roles.includes('affiliate') && <div className="dim" style={{ fontSize: 12 }}>code {u.refCode}</div>}</td><td>{u.email}<div className="dim" style={{ fontSize: 12 }}>{u.phone}</div></td><td>{u.roles.map(roleName).join(', ')}</td><td>{fmtDate(u.createdAt)}</td><td>{u.referredBy || '—'}</td><td><b>{inr(paid.filter((o) => o.userId === u.id).reduce((a, o) => a + o.amount, 0))}</b></td></tr>)}
     </tbody></table> : <Empty icon="users" title="No accounts yet" text="Sign-ups appear here." />}</div></>
   if (sec === 'courses') return arg === 'new' ? <CourseEditor /> : arg === 'edit' && id ? <CourseEditor key={id} id={id} /> : <><Top title="Courses" sub="Add, publish and edit the courses learners can buy." right={<Link to="/manage/courses/new" className="btn btn-p btn-sm">Add a course</Link>} /><CourseList /></>
   if (sec === 'messages') return <><Top title="Messages" sub="From the contact form." />

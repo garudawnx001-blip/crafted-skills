@@ -8,7 +8,8 @@ const ROLES: { r: 'learner' | 'affiliate'; t: string; s: string }[] = [
   { r: 'learner', t: 'Learner', s: 'Buy & learn' },
   { r: 'affiliate', t: 'Affiliate', s: 'Share & earn' },
 ]
-export const homeFor = (u: User) => u.roles.includes('admin') ? '/manage' : u.roles.includes('affiliate') ? '/partner' : '/dashboard'
+// everyone lands on Overview, the first item in the sidebar
+export const homeFor = (_u: User) => '/dashboard'
 const okEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim())
 
 function Art() {

@@ -95,7 +95,7 @@ export function Header() {
     on(); window.addEventListener('scroll', on, { passive: true }); return () => window.removeEventListener('scroll', on)
   }, [])
   useEffect(() => { document.documentElement.style.overflow = open ? 'hidden' : ''; return () => { document.documentElement.style.overflow = '' } }, [open])
-  const dash = user?.roles.includes('affiliate') ? '/partner' : '/dashboard'
+  const dash = '/dashboard'
   return <>
     <header className={`hdr ${scrolled || open ? 'scrolled' : ''} ${hide && !open ? 'hide' : ''}`}>
       <div className="wrap hdr-in">
@@ -106,7 +106,7 @@ export function Header() {
             <button className="avatar" onClick={() => setMenu(!menu)} aria-label="Account menu" aria-expanded={menu}>{user.name.slice(0, 1).toUpperCase()}</button>
             {menu && <div className="drop" role="menu">
               <div className="who"><b>{user.name}</b><small>{user.email}</small></div>
-              <Link to="/dashboard">My learning</Link>
+              <Link to="/dashboard">Dashboard</Link>
               {user.roles.includes('affiliate') && <Link to="/partner">Affiliate dashboard</Link>}
               <Link to="/dashboard/profile">Profile</Link>
               <button onClick={() => { logOut(); nav('/') }}>Log out</button>
