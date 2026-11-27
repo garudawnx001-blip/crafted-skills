@@ -1096,3 +1096,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .nav-back :is(.arch-in,.rv,.stg>*,.sh .w>span,.hw>span,.he:not(.mini),.eyebrow,.wipe,.wipe img,.swoosh path,.mini .bar i,.showcase .sc-item>.bcard,.tick,.tick svg,.pring){animation-duration:.5s!important;transition-duration:.5s!important}
 .nav-back .mini.he{animation-duration:.5s,6.5s!important}
 .nav-back .arch-in img{animation-duration:.6s,16s!important}
+/* founder photos: frame matches the photo, so the full picture shows (nothing cropped) */
+.fnd .ph,.fnd .ph{aspect-ratio:720/1294}
+@media (max-width:1100px){.fnd .ph{aspect-ratio:720/1294}}
+.fnd .ph img{object-position:50% 0}
