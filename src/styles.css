@@ -1089,3 +1089,10 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .jump:has(> :only-child){grid-template-columns:1fr}
 /* phone tab strip: soft fade at the right edge shows there are more sections to swipe to */
 @media (max-width:1100px){.app-tabs{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);padding-right:44px}}
+/* Back / forward: same entrance animations, played quicker and without the wait, so the page is ready fast */
+.nav-back{--hd:0s}
+.nav-back .page{animation-duration:.25s}
+.nav-back :is(.arch-in,.rv,.stg>*,.sh .w>span,.hw>span,.he,.eyebrow,.wipe,.wipe img,.swoosh path,.mini .bar i,.arch-in img,.showcase .sc-item>.bcard,.tick,.tick svg,.pring){animation-delay:0s!important;transition-delay:0s!important}
+.nav-back :is(.arch-in,.rv,.stg>*,.sh .w>span,.hw>span,.he:not(.mini),.eyebrow,.wipe,.wipe img,.swoosh path,.mini .bar i,.showcase .sc-item>.bcard,.tick,.tick svg,.pring){animation-duration:.5s!important;transition-duration:.5s!important}
+.nav-back .mini.he{animation-duration:.5s,6.5s!important}
+.nav-back .arch-in img{animation-duration:.6s,16s!important}

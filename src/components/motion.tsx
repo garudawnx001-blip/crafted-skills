@@ -92,7 +92,7 @@ export function Count({ to, prefix = '', hero }: { to: number; prefix?: string; 
     const io = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return; io.disconnect()
       const wait = hero ? (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hd')) || 0) * 1000 + 450 : 0
-      tm = window.setTimeout(() => { const t0 = performance.now(); const f = (t: number) => { const k = Math.min(1, (t - t0) / 1400); setV(Math.round(to * ease(k))); if (k < 1) raf = requestAnimationFrame(f) }; raf = requestAnimationFrame(f) }, wait)
+      tm = window.setTimeout(() => { const t0 = performance.now(); const f = (t: number) => { const k = Math.min(1, (t - t0) / (document.documentElement.classList.contains('nav-back') ? 700 : 1400)); setV(Math.round(to * ease(k))); if (k < 1) raf = requestAnimationFrame(f) }; raf = requestAnimationFrame(f) }, wait)
     }, { threshold: 0.2 })
     io.observe(el)
     return () => { io.disconnect(); clearTimeout(tm); cancelAnimationFrame(raf) }

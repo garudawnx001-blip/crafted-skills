@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Opening, { shouldOpen } from './components/Opening'
-import { HashRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { HashRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from 'react-router-dom'
 import { flushSync } from 'react-dom'
 import { Footer, Header, WhatsAppFab, useReveal } from './components/ui'
 import Home from './pages/Home'
@@ -46,11 +46,29 @@ function Frame() {
     document.addEventListener('click', onClick, true)
     return () => document.removeEventListener('click', onClick, true)
   }, [navigate])
-  // every page opens from the very top, before it paints
+  // Back / forward: return to exactly where you were; the same entrance animations play, just quicker (nav-back).
+  // A normal click opens the new page from the very top at normal pace.
+  const navType = useNavigationType(), spots = useRef(new Map<string, number>()), spot = `${loc.key}|${loc.pathname}`, key = useRef(spot)
+  useEffect(() => { let q = 0
+    const save = () => { if (!q) q = requestAnimationFrame(() => { q = 0; spots.current.set(key.current, scrollY) }) }
+    addEventListener('scroll', save, { passive: true }); return () => { removeEventListener('scroll', save); cancelAnimationFrame(q) } }, [])
+  const first = useRef(true)
   useLayoutEffect(() => {
-    const h = document.documentElement, prev = h.style.scrollBehavior
-    h.style.scrollBehavior = 'auto'; window.scrollTo(0, 0); h.style.scrollBehavior = prev
-  }, [loc.pathname])
+    // the opening intro holds the first hero back while the logo plays; any later visit to a page starts right away
+    if (first.current) first.current = false; else document.documentElement.style.removeProperty('--hd')
+    key.current = spot
+    const h = document.documentElement, prev = h.style.scrollBehavior, back = navType === 'POP' && spots.current.has(spot)
+    h.classList.toggle('nav-back', back)
+    const y = back ? spots.current.get(spot)! : 0
+    spots.current.set(spot, y)
+    h.style.scrollBehavior = 'auto'; window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior })
+    if (!back) { h.style.scrollBehavior = prev; return }
+    // the page may still be settling its height (images, the course deck's hold) for a moment: keep the spot
+    let n = 0, raf = 0; const keep = () => { if (Math.abs(scrollY - y) > 2) window.scrollTo({ top: y, left: 0, behavior: 'instant' as ScrollBehavior }); if (++n < 12) raf = requestAnimationFrame(keep); else h.style.scrollBehavior = prev }
+    const stop = () => { n = 99 }; addEventListener('wheel', stop, { passive: true, once: true }); addEventListener('touchstart', stop, { passive: true, once: true })
+    raf = requestAnimationFrame(keep)
+    return () => { cancelAnimationFrame(raf); removeEventListener('wheel', stop); removeEventListener('touchstart', stop) }
+  }, [spot, navType])
   const app = APP.test(loc.pathname), auth = AUTH.test(loc.pathname)
   return <>
     {opening && <Opening onDone={done} />}
