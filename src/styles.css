@@ -1110,3 +1110,4 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .tcard .more{margin-top:auto;padding-top:14px}
 /* very tall screens (e.g. phone in "desktop site" mode): don't stretch the hero to the full height */
 @media (max-aspect-ratio:4/5) and (min-height:1100px){.hero-grid{min-height:0}}
+.photo{background:var(--lav)}
