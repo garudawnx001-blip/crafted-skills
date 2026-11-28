@@ -1100,3 +1100,19 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .fnd .ph,.fnd .ph{aspect-ratio:720/1294}
 @media (max-width:1100px){.fnd .ph{aspect-ratio:720/1294}}
 .fnd .ph img{object-position:50% 0}
+/* student photos shown in full (no crop), larger, like the current craftedskills.in */
+.tcard .who{align-items:center;gap:16px}
+.tcard .who img{width:112px;height:auto;aspect-ratio:auto 4/5;object-fit:contain;border-radius:16px;background:var(--lav)}
+.story .who{align-items:center}
+.story .who img{width:150px;height:auto;aspect-ratio:auto 4/5;object-fit:contain;border-radius:18px;background:var(--lav)}
+@media (max-width:640px){.tcard .who img{width:100px}.story .who img{width:118px}}
+/* hero photo shown in full (frame = photo shape, nothing cropped); same reveal animation */
+.arch{aspect-ratio:1195/991;border-radius:28px}
+.arch-in{clip-path:inset(100% 0 0 0 round 28px);animation-name:archInM}
+.arch img{object-position:50% 50%}
+@media (max-width:640px){.arch{aspect-ratio:1195/991}.arch img{object-position:50% 50%}}
+.nav-back .arch-in{animation-name:archInM}
+.pic:before{border-radius:42px}
+@media (max-width:640px){.pic:before{border-radius:36px}}
+.tcard p{flex:none}
+.tcard .more{margin-top:auto;padding-top:14px}

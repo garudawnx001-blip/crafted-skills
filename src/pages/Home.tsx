@@ -84,14 +84,14 @@ function Testimonials() {
   return <>
     <Rail stagger count={TESTIMONIALS.length} head={<><span className="eyebrow">Student stories</span><SplitH text="Feedback From Our Students" style={{ marginTop: 10 }} /><p className="lead">Real words from real learners — tap a story to read it in full.</p></>}>
       {TESTIMONIALS.map((x, i) => <button key={x.name} className="card tcard" onClick={() => setOpen(i)} aria-label={`Read ${x.name}'s story`}>
-        <div className="who"><img src={x.photo} alt="" loading="lazy" width="58" height="58" /><div><b>{x.name}</b><small>Crafted Skills student</small></div></div>
+        <div className="who"><img src={x.photo} alt="" loading="lazy" decoding="async" width="112" height="140" /><div><b>{x.name}</b><small>Crafted Skills student</small></div></div>
         <div className="qm" aria-hidden="true">“</div>
         <p lang="kn">{x.text}</p><span className="more">Read full story →</span>
       </button>)}
     </Rail>
     {t && <div className="veil" onClick={(e) => e.target === e.currentTarget && setOpen(null)} role="dialog" aria-modal="true" aria-label={`${t.name}'s story`}>
       <div className="story"><button className="x" onClick={() => setOpen(null)} aria-label="Close">✕</button>
-        <div className="who"><img src={t.photo} alt={t.name} width="72" height="72" /><div><b>{t.name}</b><small>Crafted Skills student</small></div></div>
+        <div className="who"><img src={t.photo} alt={t.name} decoding="async" width="150" height="188" /><div><b>{t.name}</b><small>Crafted Skills student</small></div></div>
         <p lang="kn">{t.text}</p>
         <div className="story-nav"><button className="btn btn-g btn-sm" onClick={() => setOpen((open! + TESTIMONIALS.length - 1) % TESTIMONIALS.length)}>← Previous</button><button className="btn btn-g btn-sm" onClick={() => setOpen((open! + 1) % TESTIMONIALS.length)}>Next →</button></div>
       </div></div>}
