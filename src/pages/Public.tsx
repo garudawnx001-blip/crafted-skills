@@ -18,7 +18,7 @@ export function About() {
     <Seo title="About Crafted Skills (CraftedSkills) | Digital Skills in Kannada, Karnataka" desc={ABOUT.intro[0]} />
     <PageHero eyebrow="About us" title={<>Crafted Skills <span className="kn grad" lang="kn" style={{ display: 'block', fontSize: '.62em', marginTop: 8 }}>– {SITE.kannadaLine}</span></>} />
     <section className="sec tight"><div className="wrap split">
-      <div className="photo rv" style={{ aspectRatio: '3/2' }}><img src="img/hero-collage.webp" alt="Women learning digital skills from home" width="1200" height="800" /></div>
+      <div className="photo rv" style={{ aspectRatio: '984/655' }}><img src="img/hero-collage.webp" alt="Women learning digital skills from home" width="984" height="655" /></div>
       <div className="rv">{ABOUT.intro.map((p) => <p key={p} className="lead" style={{ marginBottom: 14 }}>{p}</p>)}</div>
     </div></section>
     <section className="sec tight"><div className="wrap"><div className="card glowy rv" style={{ padding: 'clamp(24px,4vw,48px)' }}>

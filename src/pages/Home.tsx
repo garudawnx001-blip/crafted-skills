@@ -160,7 +160,7 @@ export default function Home() {
 
     <section className="sec tint">
       <div className="wrap split">
-        <div className="photo wipe" style={{ aspectRatio: '3/2' }}><img src="img/hero-collage.webp" alt="Women learning digital skills from home" fetchPriority="low" decoding="async" width="1200" height="800" /></div>
+        <div className="photo wipe" style={{ aspectRatio: '984/655' }}><img src="img/hero-collage.webp" alt="Women learning digital skills from home" fetchPriority="low" decoding="async" width="984" height="655" /></div>
         <div className="rv">
           <span className="eyebrow">About us</span>
           <SplitH text={HOME.aboutTitle.replace(' :', '')} style={{ margin: '12px 0 16px' }} />
