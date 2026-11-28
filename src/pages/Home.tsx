@@ -29,7 +29,7 @@ function Hero() {
         </div>
       </div>
       <div className="pic">
-        <div className="arch arch-in"><img src="img/about-main.webp" alt="A woman learning digital skills on her laptop at home" width="1195" height="991" fetchPriority="high" /></div>
+        <div className="arch arch-in"><img src="img/hero-collage.webp" alt="Women learning digital skills from home" width="984" height="655" fetchPriority="high" /></div>
         <div className="lay"><div className="mini m1 he" style={d(700)}><small>My learning</small><SkillTicker /><div className="bar"><i /></div></div></div>
         <div className="lay"><div className="mini m2 he" style={d(860)}><span className="k kn">ಕ</span><b>Learn in Kannada</b></div></div>
       </div>
