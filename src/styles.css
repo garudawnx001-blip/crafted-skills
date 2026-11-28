@@ -1111,3 +1111,7 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 /* very tall screens (e.g. phone in "desktop site" mode): don't stretch the hero to the full height */
 @media (max-aspect-ratio:4/5) and (min-height:1100px){.hero-grid{min-height:0}}
 .photo{background:var(--lav)}
+/* hero height follows its content on every screen (no empty bands on big monitors) */
+.hero-grid{min-height:0}
+/* 901-1100px (tablets, phone desktop-site mode): photo band on top, text below - same as tablets */
+@media (min-width:901px) and (max-width:1100px){.hero-grid{grid-template-columns:1fr;gap:26px}}
