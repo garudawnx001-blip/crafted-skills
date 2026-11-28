@@ -329,17 +329,23 @@ export function Orbit({ head, children }: { head: ReactNode; children: ReactNode
     // Pin: once the heading and the whole deck are on screen, the section holds still for a short scroll
     // while the deck opens (CSS sticky, so the browser does the holding with no extra work), then moves on.
     const wr = wrapEl.current!, pn = pinEl.current!, sp = wr.querySelector('.orbit-pinspace') as HTMLElement
-    let pinPx = 1, pinTop = 0, wrapTop = 0
-    const measure = () => { pinPx = Math.round(innerHeight * (innerWidth < 641 ? .5 : .46)); sp.style.height = pinPx + 'px'
+    let pinPx = 1, pinTop = 0, wrapTop = 0, startRel = 0, fanLen = 1
+    const measure = () => { const hold = Math.round(innerHeight * (innerWidth < 641 ? .5 : .46))
       // short screens: shrink the deck just enough that the heading and the whole deck fit together
       // (very short screens, like a phone held sideways, fit the deck alone)
       st.style.zoom = ''; const h0 = pn.offsetHeight, sh = st.offsetHeight, room = innerHeight - 16
       if (h0 > room) { let f = (room - 26 - (h0 - sh)) / sh; if (f < (innerWidth > innerHeight ? .74 : .58)) f = Math.min(1, (room - 64) / sh); st.style.zoom = String(Math.max(.5, f).toFixed(3)) }
-      const h = pn.offsetHeight; pinTop = h <= innerHeight - 16 ? Math.round((innerHeight - h) / 2) : Math.round(innerHeight - h - 8); pn.style.top = pinTop + 'px'
+      // wide PC screens: grow the deck a little so heading + deck fill the screen (no empty band while it opens)
+      else if (innerWidth >= 1000 && innerWidth > innerHeight && h0 < room - 40) { const f = Math.min(1.2, (room - 30 - (h0 - sh)) / sh); if (f > 1.01) st.style.zoom = f.toFixed(3) }
+      const h = pn.offsetHeight; pinTop = h <= innerHeight - 16 ? Math.min(Math.round((innerHeight - h) / 2), 72) : Math.round(innerHeight - h - 8); pn.style.top = pinTop + 'px'
+      // the deck starts opening as soon as it is fully on screen; tall screens use that free scroll first,
+      // so the hold (empty space) is only what is still needed
+      startRel = Math.max(pinTop, Math.round(innerHeight - h - 8)); fanLen = hold * .86
+      pinPx = Math.max(0, hold - (startRel - pinTop)); sp.style.height = pinPx + 'px'
       wrapTop = wr.getBoundingClientRect().top + scrollY }
     measure(); const ro = new ResizeObserver(measure); ro.observe(pn); ro.observe(document.body); addEventListener('resize', measure)
     // progress straight from the scroll position: no layout read per frame
-    const fanP = () => Math.max(0, Math.min(1, (pinTop - (wrapTop - scrollY)) / (pinPx * .86))) // finishes inside the hold, leaving room for the glide
+    const fanP = () => Math.max(0, Math.min(1, (startRel - (wrapTop - scrollY)) / fanLen)) // finishes inside the hold, leaving room for the glide
     const ease = (k: number) => k * k * k * (k * (k * 6 - 15) + 10)
     const spring = (k: number) => { const t = ease(k); return t + Math.sin(Math.PI * t) * .06 * t }
     let forced = false

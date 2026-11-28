@@ -175,7 +175,7 @@ export default function Home() {
       <div className="wrap">
         <div className="head center rv"><span className="eyebrow">The people behind Crafted Skills</span><SplitH text="Meet Our Founders" /><p className="lead">A shared mission to make digital skills accessible to everyone, in Kannada.</p></div>
         <div className="founders stg">{FOUNDERS.map((f) => <Parallax key={f.name} className="card fnd">
-          <div className="ph para"><img src={f.photo} alt={`${f.name}, ${f.role} of Crafted Skills`} loading="lazy" width="720" height="1292" /></div>
+          <div className="ph"><img src={f.photo} alt={`${f.name}, ${f.role} of Crafted Skills`} loading="lazy" width="720" height="1279" /></div>
           <div><span className="role">{f.role}</span><h3>{f.name}</h3><div className="pl">{f.place}</div>
             {(f.name === 'Rachana' ? [0, 1, 3] : [0, 3]).map((k) => <p key={k} style={{ marginTop: k ? 10 : 0 }}>{f.bio[k]}</p>)}
             <p style={{ marginTop: 14 }}><Link to={`/founders/${f.name.toLowerCase()}`} className="link">Read her full story →</Link></p></div>

@@ -1097,8 +1097,8 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .nav-back .mini.he{animation-duration:.5s,6.5s!important}
 .nav-back .arch-in img{animation-duration:.6s,16s!important}
 /* founder photos: frame matches the photo, so the full picture shows (nothing cropped) */
-.fnd .ph,.fnd .ph{aspect-ratio:720/1294}
-@media (max-width:1100px){.fnd .ph{aspect-ratio:720/1294}}
+.fnd .ph,.fnd .ph{aspect-ratio:720/1279}
+@media (max-width:1100px){.fnd .ph{aspect-ratio:720/1279}}
 .fnd .ph img{object-position:50% 0}
 /* student photos shown in full (no crop), larger, like the current craftedskills.in */
 .tcard .who{align-items:center;gap:16px}
@@ -1115,3 +1115,8 @@ textarea.input{height:auto;min-height:130px;padding:14px 16px;resize:vertical}
 .hero-grid{min-height:0}
 /* 901-1100px (tablets, phone desktop-site mode): photo band on top, text below - same as tablets */
 @media (min-width:901px) and (max-width:1100px){.hero-grid{grid-template-columns:1fr;gap:26px}}
+/* founder story page: whole photo, no crop */
+.fframe,.fframe{aspect-ratio:720/1279}
+.fframe img{object-position:50% 0}
+@media (max-width:900px){.fframe{aspect-ratio:720/1279}.fphoto{max-width:400px}}
+@media (min-width:901px){.fphoto{width:min(100%,calc((100svh - 130px) * .5629))}}

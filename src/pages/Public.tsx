@@ -29,7 +29,7 @@ export function About() {
     <section className="sec tight"><div className="wrap">
       <div className="head center rv"><span className="eyebrow">The people behind Crafted Skills</span><h2 className="h2">Meet Our Founders</h2><p className="lead">A shared mission to make digital skills accessible to everyone, in Kannada.</p></div>
       <div className="founders">{FOUNDERS.map((f) => <article key={f.name} className="card fnd rv">
-        <div className="ph"><img src={f.photo} alt={`${f.name}, ${f.role} of Crafted Skills`} loading="lazy" width="720" height="1292" /></div>
+        <div className="ph"><img src={f.photo} alt={`${f.name}, ${f.role} of Crafted Skills`} loading="lazy" width="720" height="1279" /></div>
         <div><span className="role">{f.role}</span><h3>{f.name}</h3><div className="pl">{f.place}</div>{f.bio.slice(0, 2).map((b) => <p key={b} style={{ marginBottom: 10 }}>{b}</p>)}<Link to={`/founders/${f.name.toLowerCase()}`} className="link">Read her full story →</Link></div>
       </article>)}</div>
     </div></section>
@@ -76,7 +76,7 @@ export function FounderPage() {
   return <>
     <Seo title={`${f.name}, ${f.role} of Crafted Skills | Crafted Skills (CraftedSkills)`} desc={f.bio[0]} />
     <section className="fhero"><div className="wrap fgrid">
-      <div className="fphoto"><div className="fframe"><img src={f.photo} alt={`${f.name}, ${f.role} of Crafted Skills`} width="720" height="1292" fetchPriority="high" /></div>
+      <div className="fphoto"><div className="fframe"><img src={f.photo} alt={`${f.name}, ${f.role} of Crafted Skills`} width="720" height="1279" fetchPriority="high" /></div>
         <div className="fbadge"><Mark className="bm" /><div><b>{f.role}</b><span>Crafted Skills</span></div></div></div>
       <div className="fcopy">
         <div className="crumbs"><Link to="/">Home</Link> / <Link to="/about">About us</Link> / {f.name}</div>
